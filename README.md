@@ -1,2 +1,2 @@
 # BabyGRChombo
-A spherically symmetric BSSN code used for teaching NR
+A spherically symmetric BSSN code used for teaching NR - FIXME!
