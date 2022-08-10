@@ -7,49 +7,28 @@ from myparams import *
 # Assumes num_ghosts ghost cells at either end of the vector of values of length NN
 
 # second derivative
+
+d2dx2_stencil = oneoverdxsquared * np.array([-1., +16., -30., +16., -1.0]) / 12.0
+
 def get_d2fdx2(f) :
-    f_xx = np.zeros_like(f)
-    NN = np.size(f)
-    for i, f_i in enumerate(f) :
-
-        if (i > (num_ghosts-1) and i < NN-num_ghosts) :
-
-            # indices of neighbouring points
-            i_m3 = i-3
-            i_m2 = i-2
-            i_m1 = i-1
-            i_p1 = i+1
-            i_p2 = i+2
-            i_p3 = i+3
-            
-            f_xx[i] = oneoverdxsquared / 12.0 * (    - 1.0  * f[i_m2]
-                                                     + 16.0 * f[i_m1]
-                                                     - 30.0 * f[i]
-                                                     + 16.0 * f[i_p1]
-                                                     - 1.0  * f[i_p2]  )
+    # Convolve with the stencil; mode='same' will give result of size of f
+    f_xx = np.convolve(f, d2dx2_stencil, mode='same')
+    # Clear out the ghost zones
+    f_xx[0:num_ghosts] = 0.
+    f_xx[-num_ghosts:] = 0.
 
     return f_xx
 
+
+ddx_stencil = oneoverdx * np.array([-1., +8., 0., -8., +1.]) / 12.0
+
 # first derivative
 def get_dfdx(f) :
-    f_x = np.zeros_like(f)
-    NN = np.size(f)
-    for i, f_i in enumerate(f) :
-
-        if (i > (num_ghosts-1) and i < NN-num_ghosts) :
-        
-            # indices of neighbouring points
-            i_m3 = i-3
-            i_m2 = i-2
-            i_m1 = i-1
-            i_p1 = i+1
-            i_p2 = i+2
-            i_p3 = i+3
-            
-            f_x[i] = oneoverdx / 12.0 * (   + 1.0  * f[i_m2]
-                                            - 8.0  * f[i_m1]
-                                            + 8.0  * f[i_p1]
-                                            - 1.0  * f[i_p2] )
+    # Convolve with the stencil; mode='same' will give result of size of f
+    f_x = np.convolve(f, ddx_stencil, mode='same')
+    # Clear out the ghost zones
+    f_x[0:num_ghosts] = 0.
+    f_x[-num_ghosts:] = 0.
         
     return f_x
 
