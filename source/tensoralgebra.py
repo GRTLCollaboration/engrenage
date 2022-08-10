@@ -145,7 +145,7 @@ def get_A_UU(A_LL, bar_gamma_UU) :
         for j in range(0, SPACEDIM): 
             for k in range(0, SPACEDIM):
                 for l in range(0, SPACEDIM): 
-                    A_UU[i][j] = bar_gamma_UU[i][k]* bar_gamma_UU[j][l] * A_LL[k][l]
+                    A_UU[i][j] += bar_gamma_UU[i][k]* bar_gamma_UU[j][l] * A_LL[k][l]
     
     return A_UU
 
