@@ -65,8 +65,8 @@ def get_rhs(vars_vec, t_i, p, q) :
         h[i_p][i_p] = hpp[ix]
         determinant = get_rescaled_determinant_gamma(h)
         hrr[ix] = hrr[ix]/determinant
-        htt[ix] = hrr[ix]/determinant
-        hpp[ix] = hrr[ix]/determinant
+        htt[ix] = htt[ix]/determinant
+        hpp[ix] = hpp[ix]/determinant
         
         # Also just for convenience work out the shift with lowered index
         shiftrL[ix] = shiftr[ix] * hrr[ix] * np.exp(4.0*phi[ix])
