@@ -27,11 +27,8 @@ rank_1_spatial_tensor = np.zeros(SPACEDIM)
 rank_2_spatial_tensor = np.array([rank_1_spatial_tensor, rank_1_spatial_tensor, rank_1_spatial_tensor])
 rank_3_spatial_tensor = np.array([rank_2_spatial_tensor, rank_2_spatial_tensor, rank_2_spatial_tensor])
 
-# delta function \delta_ij
-delta = np.zeros_like(rank_2_spatial_tensor)
-delta[0][0] = 1
-delta[1][1] = 1
-delta[2][2] = 1
+# Kronecker delta \delta_ij (i.e. identity matrix)
+delta = np.identity(SPACEDIM)
 
 # flat spherical christoffel symbols
 # See eqn (18) in Baumgarte https://arxiv.org/abs/1211.6632
@@ -59,15 +56,7 @@ def get_flat_spherical_chris(r_here) :
 
 def get_conformal_chris(Delta_ULL, r_here) :
 
-    conformal_chris = np.zeros_like(rank_3_spatial_tensor)
-    flat_chris = get_flat_spherical_chris(r_here)
-    
-    for i in range(0, SPACEDIM):
-        for j in range(0, SPACEDIM): 
-            for k in range(0, SPACEDIM):
-                conformal_chris[i][j][k] = flat_chris[i][j][k] + Delta_ULL[i][j][k]
-                
-    return conformal_chris
+    return get_flat_spherical_chris(r_here) + Delta_ULL
     
 # Compute determinant of conformal spatial metric \bar\gamma divided by r^4 sin^2 theta
 def get_rescaled_determinant_gamma(h) :
@@ -101,53 +90,43 @@ def get_rescaled_metric(h) :
     return r_gamma_LL
 
 # Computer inverse of the conformal spatial metric \bar\gamma^ij given the rescaled perturbation h
-def get_inverse_metric(r_here, h) :
+def get_inverse_metric(r_here, h):
     
-    inv_scaling = np.array([1.0, 1.0/r_here , 1.0/r_here/sintheta])    
+    inv_scaling = np.array([1.0, 1.0/r_here , 1.0/r_here/sintheta])
 
-    gamma_UU = np.zeros_like(rank_2_spatial_tensor)  
+    # We assume the metric perturbation h is diagonal.
+    # Just act on the diagonal, then promote back to a 3x3 matrix
+    # Note that np.diag both promotes and demotes!
+    diag_h = np.diag(h)
+    return np.diag(inv_scaling * inv_scaling / (1. + diag_h))
 
-    gamma_UU[i_r][i_r] =   inv_scaling[i_r] * inv_scaling[i_r] /  ( 1.0 + h[i_r][i_r] )
-    gamma_UU[i_t][i_t] =   inv_scaling[i_t] * inv_scaling[i_t] /  ( 1.0 + h[i_t][i_t] )
-    gamma_UU[i_p][i_p] =   inv_scaling[i_p] * inv_scaling[i_p] /  ( 1.0 + h[i_p][i_p] )
-        
-    return gamma_UU
-
-def get_rescaled_inverse_metric(h) :   
+def get_rescaled_inverse_metric(h):
     
-    r_gamma_UU = np.zeros_like(rank_2_spatial_tensor)   
+    # We assume the metric perturbation h is diagonal.
+    # Just act on the diagonal, then promote back to a 3x3 matrix
+    # Note that np.diag both promotes and demotes!
+    diag_h = np.diag(h)
+    return np.diag( 1. / (1. + diag_h ) )
 
-    r_gamma_UU[i_r][i_r] =   1.0 / ( 1.0 + h[i_r][i_r] )    
-    r_gamma_UU[i_t][i_t] =   1.0 / ( 1.0 + h[i_t][i_t] )    
-    r_gamma_UU[i_p][i_p] =   1.0 / ( 1.0 + h[i_p][i_p] )
-    
-    return r_gamma_UU
-
-# Computer the \bar A_ij given the rescaled perturbation a
-def get_A_LL(r_here, a) :
+# Compute the \bar A_ij given the rescaled perturbation a
+def get_A_LL(r_here, a):
 
     scaling = np.array([1.0, r_here , r_here*sintheta])    
 
-    A_LL = np.zeros_like(rank_2_spatial_tensor)   
+    # We assume that `a` is diagonal.
+    # Just act on the diagonal, then promote back to a 3x3 matrix
+    # Note that np.diag both promotes and demotes!
+    return np.diag( scaling * scaling * np.diag(a) )
 
-    A_LL[i_r][i_r] =   scaling[i_r] * scaling[i_r] * a[i_r][i_r]   
-    A_LL[i_t][i_t] =   scaling[i_t] * scaling[i_t] * a[i_t][i_t]    
-    A_LL[i_p][i_p] =   scaling[i_p] * scaling[i_p] * a[i_p][i_p]
+# Compute the \bar A^ij given A_ij and \bar\gamma^ij
+def get_A_UU(A_LL, bar_gamma_UU):
     
-    return A_LL
-
-# Computer the \bar A^ij given A_ij and \bar\gamma^ij
-def get_A_UU(A_LL, bar_gamma_UU) :
-    
-    A_UU = np.zeros_like(rank_2_spatial_tensor)
-  
-    for i in range(0, SPACEDIM):
-        for j in range(0, SPACEDIM): 
-            for k in range(0, SPACEDIM):
-                for l in range(0, SPACEDIM): 
-                    A_UU[i][j] += bar_gamma_UU[i][k]* bar_gamma_UU[j][l] * A_LL[k][l]
-    
-    return A_UU
+    # Note that bar_gamma_UU is symmetric.
+    # If it wasn't symmetric, we would need to be careful about
+    # transposing when multiplying from the right.
+    # multi_dot is kind of overkill here for 3x3 matrices...
+    # but it's good to know about!
+    return np.linalg.multi_dot( [ bar_gamma_UU, A_LL, bar_gamma_UU ] )
 
 # Compute trace of (traceless part of) extrinsic curvature
 def get_trace_A(r_here, a, bar_gamma_UU) :
@@ -162,15 +141,10 @@ def get_trace_A(r_here, a, bar_gamma_UU) :
     return trace_A
 
 # Compute trace of some rank 2 tensor with indices lowered
-def get_trace(T_LL, gamma_UU) :
-    
-    trace_T = 0.0
-    for i in range(0, SPACEDIM):
-        for j in range(0, SPACEDIM):    
-            trace_T += gamma_UU[i][j] * T_LL[i][j]
-       
-    return trace_T
+def get_trace(T_LL, gamma_UU):
 
+    # Matrix multiply, then matrix trace
+    return np.trace( np.dot(gamma_UU, T_LL ) )
 
 # Compute A_ij A^ij
 def get_Asquared(r_here, a, bar_gamma_UU) :
