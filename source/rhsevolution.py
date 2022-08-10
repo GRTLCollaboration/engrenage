@@ -154,8 +154,9 @@ def get_rhs(vars_vec, t_i, p, q) :
         # \hat \Gamma^i_jk
         flat_chris = get_flat_spherical_chris(r_here)
         
-        # rescaled \bar\gamma_ij
+        # rescaled \bar\gamma_ij and \bar\gamma^ij
         r_gamma_LL = get_rescaled_metric(h)
+        r_gamma_UU = get_rescaled_inverse_metric(h)
         
         # (unscaled) \bar\gamma_ij and \bar\gamma^ij
         bar_gamma_LL = get_metric(r_here, h)
@@ -163,9 +164,9 @@ def get_rhs(vars_vec, t_i, p, q) :
         
         # \bar A_ij and its trace, \bar A_ij \bar A^ij
         bar_A_LL = get_A_LL(r_here, a)
-        bar_A_UU = get_A_UU(bar_A_LL, bar_gamma_UU)
-        traceA   = get_trace_A(r_here, a, bar_gamma_UU)
-        Asquared = get_Asquared(r_here, a, bar_gamma_UU)
+        bar_A_UU = get_A_UU(a, r_gamma_UU)
+        traceA   = get_trace_A(r_here, a, r_gamma_UU)
+        Asquared = get_Asquared(r_here, a, r_gamma_UU)
         
         # This is the conformal divergence of the shift \bar D_i \beta^i
         # We use the fact that the determinant of the conformal metric is 

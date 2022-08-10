@@ -119,26 +119,20 @@ def get_A_LL(r_here, a):
     return np.diag( scaling * scaling * np.diag(a) )
 
 # Compute the \bar A^ij given A_ij and \bar\gamma^ij
-def get_A_UU(A_LL, bar_gamma_UU):
+def get_A_UU(a, r_gamma_UU):
     
     # Note that bar_gamma_UU is symmetric.
     # If it wasn't symmetric, we would need to be careful about
     # transposing when multiplying from the right.
     # multi_dot is kind of overkill here for 3x3 matrices...
     # but it's good to know about!
-    return np.linalg.multi_dot( [ bar_gamma_UU, A_LL, bar_gamma_UU ] )
+    return np.linalg.multi_dot( [ r_gamma_UU, a, r_gamma_UU ] )
 
 # Compute trace of (traceless part of) extrinsic curvature
-def get_trace_A(r_here, a, bar_gamma_UU) :
-
-    scaling = np.array([1.0, r_here , r_here*sintheta]) 
-    
-    trace_A = 0.0
-    for i in range(0, SPACEDIM):
-        for j in range(0, SPACEDIM):    
-            trace_A += scaling[i] * scaling[j] * bar_gamma_UU[i][j] * a[i][j]
+def get_trace_A(r_here, a, r_gamma_UU) : 
        
-    return trace_A
+    # Matrix multiply, then matrix trace
+    return np.trace( np.dot(r_gamma_UU, a ) )
 
 # Compute trace of some rank 2 tensor with indices lowered
 def get_trace(T_LL, gamma_UU):
@@ -147,18 +141,15 @@ def get_trace(T_LL, gamma_UU):
     return np.trace( np.dot(gamma_UU, T_LL ) )
 
 # Compute A_ij A^ij
-def get_Asquared(r_here, a, bar_gamma_UU) :
-
-    scaling = np.array([1.0, r_here , r_here*sintheta])
+def get_Asquared(r_here, a, r_gamma_UU) :
     
     Asquared = 0.0
     for i in range(0, SPACEDIM):
         for j in range(0, SPACEDIM):    
             for k in range(0, SPACEDIM):
                 for l in range(0, SPACEDIM):  
-                    Asquared += (scaling[i] * scaling[j] * a[i][j]
-                                 * scaling[k] * scaling[l] * a[k][l]
-                                 * bar_gamma_UU[i][k] * bar_gamma_UU[j][l])
+                    Asquared += ( a[i][j] *  a[k][l]
+                                 * r_gamma_UU[i][k] * r_gamma_UU[j][l])
        
     return Asquared
 
