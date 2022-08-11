@@ -299,9 +299,9 @@ def get_metric_deriv(r_here, h, dhdr) :
     # Fill derivatives D_k epsilon_ij
     for i in range(0, SPACEDIM):
         for j in range(0, SPACEDIM):
-            dedx[i_r, i,j]   = dhdr[i][j]     * scaling[i] * scaling[j]
-            dedx[i_t, i,j]   = dhdtheta[i][j] * scaling[i] * scaling[j]
-            dedx[i_p, i,j]   = dhdphi[i][j]   * scaling[i] * scaling[j]
+            dedx[i_r, i,j]   += dhdr[i][j]     * scaling[i] * scaling[j]
+            dedx[i_t, i,j]   += dhdtheta[i][j] * scaling[i] * scaling[j]
+            dedx[i_p, i,j]   += dhdphi[i][j]   * scaling[i] * scaling[j]
             
     # Add additional terms from christoffels etc
     
