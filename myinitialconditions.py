@@ -41,7 +41,8 @@ def get_initial_vars_values() :
         # note that we choose that the determinant \bar{gamma} = \hat{gamma} initially
         grr_here = f_grr(r_i)
         phys_gamma_over_r4sin2theta = grr_here
-        phi_here = - 1.0/12.0 * np.log(phys_gamma_over_r4sin2theta)
+        # Note sign error in Baumgarte eqn (2) 
+        phi_here = 1.0/12.0 * np.log(phys_gamma_over_r4sin2theta)
         initial_vars_values[ix + idx_phi * N]   = phi_here
         em4phi = np.exp(-4.0*phi_here)
         initial_vars_values[ix + idx_hrr * N]   = em4phi * grr_here - 1
