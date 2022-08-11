@@ -136,7 +136,7 @@ def get_diagnostics(solutions_over_time) :
                                       - 8.0 * bar_gamma_UU[i_r][i_r] * (dphidx[ix] * dphidx[ix] 
                                                                         + d2phidx2[ix])
                                       # These terms come from \bar\Gamma^r d_r \phi from the \bar D^2 \phi term
-                                      + 8.0 * bar_gamma_UU[i_t][i_t] * flat_chris[i_r][i_t][i_t] * dphidx[ix] 
+                                      + 8.0 * bar_gamma_UU[i_t][i_t] * flat_chris[i_r][i_t][i_t] * dphidx[ix]
                                       + 8.0 * bar_gamma_UU[i_p][i_p] * flat_chris[i_r][i_p][i_p] * dphidx[ix]
                                       + 8.0 * Delta_U[i_r] * dphidx[ix])
                          - 2.0 * eight_pi_G * matter_rho )
