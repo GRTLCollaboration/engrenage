@@ -16,37 +16,26 @@ from source.bssn_rhs import *
 # Assumes 3 ghost cells at either end of the vector of values
 
 # klein gordon eqn
-def get_diagnostics(solution) :
+def get_diagnostics(solutions_over_time) :
 
     start = time.time()
     
     Ham = []
+    num_times = int(np.size(solutions_over_time) / (NUM_VARS * N))
     
-    # unpack the vectors at each time t_i
-    for i, t_i in enumerate(t) : 
+    # unpack the vectors at each time
+    for i in range(num_times) :
+        
+        t_i = t[i]
+        
+        if(num_times == 1):
+            solution = solutions_over_time
+        else :
+            solution = solutions_over_time[i]
 
-        # Scalar field vars
-        u    = solution[i, idx_u * N : (idx_u + 1) * N]
-        v    = solution[i, idx_v * N : (idx_v + 1) * N]
-    
-        # Conformal factor and rescaled perturbation to spatial metric
-        phi    = solution[i, idx_phi * N : (idx_phi + 1) * N]
-        hrr    = solution[i, idx_hrr * N : (idx_hrr + 1) * N]
-        htt    = solution[i, idx_htt * N : (idx_htt + 1) * N]
-        hpp    = solution[i, idx_hpp * N : (idx_hpp + 1) * N]
-
-        # Mean curvature and rescaled perturbation to traceless A_ij
-        K      = solution[i, idx_K   * N : (idx_K   + 1) * N]
-        arr    = solution[i, idx_arr * N : (idx_arr + 1) * N]
-        att    = solution[i, idx_att * N : (idx_att + 1) * N]
-        app    = solution[i, idx_app * N : (idx_app + 1) * N]
-
-        # Gamma^x, shift and lapse
-        lambdar    = solution[i, idx_lambdar * N : (idx_lambdar + 1) * N]
-        shiftr     = solution[i, idx_shiftr  * N : (idx_shiftr  + 1) * N]
-        br         = solution[i, idx_br      * N : (idx_br      + 1) * N]
-        lapse      = solution[i, idx_lapse   * N : (idx_lapse   + 1) * N]    
-    
+        # Unpack variables
+        u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse = unpack_vars_vector(solution)
+        
         ################################################################################################
 
         # get the various derivs that we need to evolve things in vector form
@@ -72,12 +61,12 @@ def get_diagnostics(solution) :
     
         #################################################################################################
     
-        # make containers for rhs values
+        # make container for output values
         Ham_i   = np.zeros_like(u)
     
         #################################################################################################    
     
-        # now iterate over the grid (vector) and calculate the rhs values
+        # now iterate over the grid (vector) and calculate the diagnostic values
         for ix in range(num_ghosts, N-num_ghosts) :
 
             # where am I?
@@ -113,6 +102,7 @@ def get_diagnostics(solution) :
         
             # rescaled \bar\gamma_ij
             r_gamma_LL = get_rescaled_metric(h)
+            r_gamma_UU = get_rescaled_inverse_metric(h)
         
             # (unscaled) \bar\gamma_ij and \bar\gamma^ij
             bar_gamma_LL = get_metric(r_here, h)
@@ -120,9 +110,9 @@ def get_diagnostics(solution) :
         
             # \bar A_ij and its trace, \bar A_ij \bar A^ij
             bar_A_LL = get_A_LL(r_here, a)
-            bar_A_UU = get_A_UU(bar_A_LL, bar_gamma_UU)
-            traceA   = get_trace_A(r_here, a, bar_gamma_UU)
-            Asquared = get_Asquared(r_here, a, bar_gamma_UU)
+            bar_A_UU = get_A_UU(a, r_gamma_UU)
+            traceA   = get_trace_A(r_here, a, r_gamma_UU)
+            Asquared = get_Asquared(r_here, a, r_gamma_UU)
             trace_A2 = get_trace(bar_A_LL, bar_A_UU)
         
             # The connections Delta^i, Delta^i_jk and Delta_ijk
@@ -145,6 +135,7 @@ def get_diagnostics(solution) :
                          + em4phi * ( bar_R
                                       - 8.0 * bar_gamma_UU[i_r][i_r] * (dphidx[ix] * dphidx[ix] 
                                                                         + d2phidx2[ix])
+                                      # These terms come from \bar\Gamma^r d_r \phi from the \bar D^2 \phi term
                                       + 8.0 * bar_gamma_UU[i_t][i_t] * flat_chris[i_r][i_t][i_t] * dphidx[ix] 
                                       + 8.0 * bar_gamma_UU[i_p][i_p] * flat_chris[i_r][i_p][i_p] * dphidx[ix]
                                       + 8.0 * Delta_U[i_r] * dphidx[ix])

@@ -27,27 +27,8 @@ def get_rhs(vars_vec, t_i, p, q) :
     #unpackage the vector for readability - these are the vectors of values across r values at time t_i
     # see uservariables.py for naming conventions
     
-    # Scalar field vars
-    u    = vars_vec[idx_u * N : (idx_u + 1) * N]
-    v    = vars_vec[idx_v * N : (idx_v + 1) * N]
-    
-    # Conformal factor and rescaled perturbation to spatial metric
-    phi    = vars_vec[idx_phi * N : (idx_phi + 1) * N]
-    hrr    = vars_vec[idx_hrr * N : (idx_hrr + 1) * N]
-    htt    = vars_vec[idx_htt * N : (idx_htt + 1) * N]
-    hpp    = vars_vec[idx_hpp * N : (idx_hpp + 1) * N]
-
-    # Mean curvature and rescaled perturbation to traceless A_ij
-    K      = vars_vec[idx_K   * N : (idx_K   + 1) * N]
-    arr    = vars_vec[idx_arr * N : (idx_arr + 1) * N]
-    att    = vars_vec[idx_att * N : (idx_att + 1) * N]
-    app    = vars_vec[idx_app * N : (idx_app + 1) * N]
-
-    # Gamma^x, shift and lapse
-    lambdar    = vars_vec[idx_lambdar * N : (idx_lambdar + 1) * N]
-    shiftr     = vars_vec[idx_shiftr  * N : (idx_shiftr  + 1) * N]
-    br         = vars_vec[idx_br      * N : (idx_br      + 1) * N]
-    lapse      = vars_vec[idx_lapse   * N : (idx_lapse   + 1) * N]    
+    # Unpack variables
+    u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse = unpack_vars_vector(vars_vec)   
 
     ####################################################################################################
     # enforce that the determinant of \bar gamma_ij is equal to that of flat space in spherical coords

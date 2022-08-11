@@ -5,9 +5,9 @@
 import numpy as np
 
 # Input parameters for grid and evolution here
-N_r = 240 # num points on physical grid
+N_r = 500 # num points on physical grid
 N_t = 101 # time resolution (only for outputs, not for integration)
-R = 120 # Maximum outer radius
+R = 5 # Maximum outer radius
 T = 2.0 # Maximum evolution time
 
 # coefficients for bssn and gauge evolution

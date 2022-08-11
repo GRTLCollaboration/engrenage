@@ -1,5 +1,7 @@
 #uservariables.py
 
+from myparams import *
+
 # This file provides the list of (rescaled) variables to be evolved and
 # assigns each one an index and its parity
 
@@ -24,4 +26,31 @@ parity = [1, 1,           # u, v
           1, 1, 1, 1,     # phi, h
           1, 1, 1, 1,     # K, a
           -1, -1, -1, 1]  # lambda^r, shift^r, b^r, lapse
-          
+
+def unpack_vars_vector(vars_vec) :
+
+    domain_length = N
+    
+    # Scalar field vars
+    u    = vars_vec[idx_u * domain_length : (idx_u + 1) * domain_length]
+    v    = vars_vec[idx_v * domain_length : (idx_v + 1) * domain_length]
+    
+    # Conformal factor and rescaled perturbation to spatial metric
+    phi    = vars_vec[idx_phi * domain_length : (idx_phi + 1) * domain_length]
+    hrr    = vars_vec[idx_hrr * domain_length : (idx_hrr + 1) * domain_length]
+    htt    = vars_vec[idx_htt * domain_length : (idx_htt + 1) * domain_length]
+    hpp    = vars_vec[idx_hpp * domain_length : (idx_hpp + 1) * domain_length]
+
+    # Mean curvature and rescaled perturbation to traceless A_ij
+    K      = vars_vec[idx_K   * domain_length : (idx_K   + 1) * domain_length]
+    arr    = vars_vec[idx_arr * domain_length : (idx_arr + 1) * domain_length]
+    att    = vars_vec[idx_att * domain_length : (idx_att + 1) * domain_length]
+    app    = vars_vec[idx_app * domain_length : (idx_app + 1) * domain_length]
+
+    # Gamma^x, shift and lapse
+    lambdar    = vars_vec[idx_lambdar * domain_length : (idx_lambdar + 1) * domain_length]
+    shiftr     = vars_vec[idx_shiftr  * domain_length : (idx_shiftr  + 1) * domain_length]
+    br         = vars_vec[idx_br      * domain_length : (idx_br      + 1) * domain_length]
+    lapse      = vars_vec[idx_lapse   * domain_length : (idx_lapse   + 1) * domain_length]    
+    
+    return u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse
