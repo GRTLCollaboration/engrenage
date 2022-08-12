@@ -272,12 +272,12 @@ def get_hat_D2_bar_gamma(r_here, h, dhdr, d2hdr2, bar_gamma_UU) :
 #                 \  r sin(theta) h_rp     r^2 sin(theta) h_tp     r^2 sin^2(theta) h_pp /
 # here h is the rescaled perturbation to the flat metric
 
-# Covariant derivative of the spatial metric \bar{D} \bar{\gamma}_{ij} with 
+# Covariant derivative of the spatial metric \hat{D} \bar{\gamma}_{ij} with 
 # respect to the flat metric in spherical polar coordinates
 # See eqn (25) in Baumgarte https://arxiv.org/abs/1211.6632
 def get_metric_deriv(r_here, h, dhdr) :
 
-    dedx = np.zeros_like(rank_3_spatial_tensor)
+    hat_D_epsilon = np.zeros_like(rank_3_spatial_tensor)
     
     # assume spherical symmetry
     dhdtheta = np.zeros_like(dhdr)
@@ -287,45 +287,46 @@ def get_metric_deriv(r_here, h, dhdr) :
     r2 = r_here * r_here
     scaling = np.array([1.0, r_here , r_here*sintheta])
     
-    # Fill derivatives D_k epsilon_ij
+    # Fill derivatives \hat D_k epsilon_ij
     for i in range(0, SPACEDIM):
         for j in range(0, SPACEDIM):
-            dedx[i_r, i,j]   += dhdr[i][j]     * scaling[i] * scaling[j]
-            dedx[i_t, i,j]   += dhdtheta[i][j] * scaling[i] * scaling[j]
-            dedx[i_p, i,j]   += dhdphi[i][j]   * scaling[i] * scaling[j]
+            hat_D_epsilon[i_r, i, j]   = dhdr[i][j]     * scaling[i] * scaling[j]
+            hat_D_epsilon[i_t, i, j]   = dhdtheta[i][j] * scaling[i] * scaling[j]
+            hat_D_epsilon[i_p, i, j]   = dhdphi[i][j]   * scaling[i] * scaling[j]
             
     # Add additional terms from christoffels etc
     
     # d/dtheta
-    dedx[i_t, i_r, i_r ] += - 2.0 *      h[i_r][i_t]
-    dedx[i_t, i_t, i_t ] +=   2.0 * r2 * h[i_r][i_t]
-    dedx[i_t, i_p, i_p ] +=   0.0
+    hat_D_epsilon[i_t, i_r, i_r ] += - 2.0 *      h[i_r][i_t]
+    hat_D_epsilon[i_t, i_t, i_t ] +=   2.0 * r2 * h[i_r][i_t]
+    hat_D_epsilon[i_t, i_p, i_p ] +=   0.0
     
-    dedx[i_t, i_r, i_t ] += scaling[i_r] * scaling[i_t] * (  h[i_r][i_r] - h[i_t][i_t] )
-    dedx[i_t, i_t, i_r ]  = dedx[i_t, i_r, i_t] 
+    hat_D_epsilon[i_t, i_r, i_t ] += scaling[i_r] * scaling[i_t] * (  h[i_r][i_r] - h[i_t][i_t] )
+    hat_D_epsilon[i_t, i_t, i_r ] = hat_D_epsilon[i_t, i_r, i_t] 
     
-    dedx[i_t, i_r, i_p ] += scaling[i_r] * scaling[i_p] * (- h[i_t][i_p])
-    dedx[i_t, i_p, i_r ]  = dedx[i_t, i_r, i_p]
+    hat_D_epsilon[i_t, i_r, i_p ] += scaling[i_r] * scaling[i_p] * (- h[i_t][i_p])
+    hat_D_epsilon[i_t, i_p, i_r ] = hat_D_epsilon[i_t, i_r, i_p]
 
-    dedx[i_t, i_t, i_p ] += scaling[i_t] * scaling[i_p] * (  h[i_r][i_p])
-    dedx[i_t, i_p, i_t ]  = dedx[i_t, i_t, i_p]
+    hat_D_epsilon[i_t, i_t, i_p ] += scaling[i_t] * scaling[i_p] * (  h[i_r][i_p])
+    hat_D_epsilon[i_t, i_p, i_t ] = hat_D_epsilon[i_t, i_t, i_p]
     
     # d/dphi
-    dedx[i_p, i_r, i_r ] += - 2.0 *      sintheta * h[i_r][i_p]
-    dedx[i_p, i_t, i_t ] += - 2.0 * r2 * costheta * h[i_t][i_p]
-    dedx[i_p, i_p, i_p ] +=   2.0 * r2 * sin2theta * costheta * h[i_t][i_p]
+    hat_D_epsilon[i_p, i_r, i_r ] += - 2.0 *      sintheta * h[i_r][i_p]
+    hat_D_epsilon[i_p, i_t, i_t ] += - 2.0 * r2 * costheta * h[i_t][i_p]
+    hat_D_epsilon[i_p, i_p, i_p ] +=   2.0 * r2 * sin2theta * ( costheta * h[i_t][i_p] 
+                                                              + sintheta * h[i_r][i_p] )
     
-    dedx[i_p, i_r, i_t ] += scaling[i_r] * scaling[i_t] * (- costheta * h[i_r][i_p] 
-                                                                              - sintheta * h[i_t][i_p])
-    dedx[i_p, i_t, i_r ]  = dedx[i_p, i_r, i_t] 
+    hat_D_epsilon[i_p, i_r, i_t ] += scaling[i_r] * scaling[i_t] * (- costheta * h[i_r][i_p] 
+                                                                    - sintheta * h[i_t][i_p] )
+    hat_D_epsilon[i_p, i_t, i_r ] = hat_D_epsilon[i_p, i_r, i_t] 
     
-    dedx[i_p, i_r, i_p ] += scaling[i_r] * scaling[i_p] * (  costheta * h[i_r][i_t]
-                                                                              + sintheta * h[i_r][i_r]
-                                                                              - sintheta * h[i_p][i_p])
-    dedx[i_p, i_p, i_r ]  = dedx[i_p, i_r, i_p]
+    hat_D_epsilon[i_p, i_r, i_p ] += scaling[i_r] * scaling[i_p] * (  costheta * h[i_r][i_t]
+                                                                    + sintheta * h[i_r][i_r]
+                                                                    - sintheta * h[i_p][i_p] )
+    hat_D_epsilon[i_p, i_p, i_r ] = hat_D_epsilon[i_p, i_r, i_p]
 
-    dedx[i_p, i_t, i_p ] += scaling[i_t] * scaling[i_p]   * (  sintheta * h[i_r][i_p]                                                                                                          + sintheta * h[i_r][i_r]
-                                                             - sintheta * h[i_p][i_p])
-    dedx[i_p, i_p, i_t ]  = dedx[i_p, i_t, i_p]
+    hat_D_epsilon[i_p, i_t, i_p ] += scaling[i_t] * scaling[i_p] * ( sintheta * h[i_r][i_t]                                                                                  + costheta * h[i_t][i_t]
+                                                                   - costheta * h[i_p][i_p] )
+    hat_D_epsilon[i_p, i_p, i_t ] = hat_D_epsilon[i_p, i_t, i_p]
             
-    return dedx
+    return hat_D_epsilon
