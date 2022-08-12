@@ -129,8 +129,8 @@ def get_A_UU(a, r_gamma_UU):
     return np.linalg.multi_dot( [ r_gamma_UU, a, r_gamma_UU ] )
 
 # Compute trace of (traceless part of) extrinsic curvature
-def get_trace_A(r_here, a, r_gamma_UU) : 
-       
+def get_trace_A(a, r_gamma_UU) :
+
     # Matrix multiply, then matrix trace
     return np.trace( np.dot(r_gamma_UU, a ) )
 
@@ -141,7 +141,7 @@ def get_trace(T_LL, gamma_UU):
     return np.trace( np.dot(gamma_UU, T_LL ) )
 
 # Compute A_ij A^ij
-def get_Asquared(r_here, a, r_gamma_UU) :
+def get_Asquared(a, r_gamma_UU) :
     
     Asquared = 0.0
     for i in range(0, SPACEDIM):
@@ -290,9 +290,9 @@ def get_metric_deriv(r_here, h, dhdr) :
     # Fill derivatives D_k epsilon_ij
     for i in range(0, SPACEDIM):
         for j in range(0, SPACEDIM):
-            dedx[i_r, i,j]   = dhdr[i][j]     * scaling[i] * scaling[j]
-            dedx[i_t, i,j]   = dhdtheta[i][j] * scaling[i] * scaling[j]
-            dedx[i_p, i,j]   = dhdphi[i][j]   * scaling[i] * scaling[j]
+            dedx[i_r, i,j]   += dhdr[i][j]     * scaling[i] * scaling[j]
+            dedx[i_t, i,j]   += dhdtheta[i][j] * scaling[i] * scaling[j]
+            dedx[i_p, i,j]   += dhdphi[i][j]   * scaling[i] * scaling[j]
             
     # Add additional terms from christoffels etc
     

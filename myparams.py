@@ -5,10 +5,10 @@
 import numpy as np
 
 # Input parameters for grid and evolution here
-N_r = 500 # num points on physical grid
+N_r = 120 # num points on physical grid
 N_t = 101 # time resolution (only for outputs, not for integration)
-R = 5 # Maximum outer radius
-T = 2.0 # Maximum evolution time
+R = 60.0 # Maximum outer radius
+T = 3.0 # Maximum evolution time
 
 # coefficients for bssn and gauge evolution
 eta = 1.0 # 1+log slicing damping coefficient
@@ -30,3 +30,10 @@ r = np.linspace(-(num_ghosts-0.5)*dx, R+(num_ghosts-0.5)*dx, N)
 t = np.linspace(0, T-dt, N_t)
 oneoverdx  = 1.0 / dx
 oneoverdxsquared = oneoverdx * oneoverdx
+
+# for control of time integrator
+USE_ODEINT = False # odeint uses implicit python methods, turn off to use RK45
+# If using odeint add some additional controls
+max_dt = 0.1 * dx # Enforce courant condition
+min_dt = max_dt / 100 
+max_steps = int(dt / min_dt) # Don't want tiny steps - give up if too small
