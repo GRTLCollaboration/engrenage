@@ -154,18 +154,19 @@ def get_rhs(vars_vec, t_i, p, q) :
         # \hat \Gamma^i_jk
         flat_chris = get_flat_spherical_chris(r_here)
         
-        # rescaled \bar\gamma_ij
+        # rescaled \bar\gamma_ij and \bar\gamma^ij
         r_gamma_LL = get_rescaled_metric(h)
+        r_gamma_UU = get_rescaled_inverse_metric(h)
         
         # (unscaled) \bar\gamma_ij and \bar\gamma^ij
         bar_gamma_LL = get_metric(r_here, h)
         bar_gamma_UU = get_inverse_metric(r_here, h)
         
-        # \bar A_ij and its trace, \bar A_ij \bar A^ij
+        # \bar A_ij, \bar A^ij and the trace A_i^i, then Asquared = \bar A_ij \bar A^ij
         bar_A_LL = get_A_LL(r_here, a)
-        bar_A_UU = get_A_UU(bar_A_LL, bar_gamma_UU)
-        traceA   = get_trace_A(r_here, a, bar_gamma_UU)
-        Asquared = get_Asquared(r_here, a, bar_gamma_UU)
+        bar_A_UU = get_A_UU(a, r_gamma_UU)
+        traceA   = get_trace_A(a, r_gamma_UU)
+        Asquared = get_Asquared(a, r_gamma_UU)
         
         # This is the conformal divergence of the shift \bar D_i \beta^i
         # We use the fact that the determinant of the conformal metric is 
@@ -193,6 +194,9 @@ def get_rhs(vars_vec, t_i, p, q) :
         Delta_U, Delta_ULL, Delta_LLL  = get_connection(r_here, bar_gamma_UU, bar_gamma_LL, h, dhdr)
         bar_Rij = get_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar[ix], dlambdardx[ix], 
                                    Delta_U, Delta_ULL, Delta_LLL, bar_gamma_UU, bar_gamma_LL)
+
+        # \bar \gamma^i_jk
+        conformal_chris = get_conformal_chris(Delta_ULL, r_here)
         
         # Matter sources
         matter_rho            = get_rho( u[ix], dudx[ix], v[ix], bar_gamma_UU, em4phi )
@@ -205,7 +209,8 @@ def get_rhs(vars_vec, t_i, p, q) :
 
         # Get the matter rhs
         rhs_u[ix], rhs_v[ix] = get_matter_rhs(u[ix], v[ix], dudx[ix], d2udx2[ix], 
-                                              bar_gamma_UU, em4phi, dphidx[ix], K[ix], lapse[ix], dlapsedx[ix])
+                                              bar_gamma_UU, em4phi, dphidx[ix], 
+                                              K[ix], lapse[ix], dlapsedx[ix], conformal_chris)
 
         # Add advection
         rhs_u[ix] += shiftr[ix] * dudx[ix]
@@ -230,8 +235,8 @@ def get_rhs(vars_vec, t_i, p, q) :
                                     h, dhdr, d2hdr2, matter_Sij)
         
         rhs_lambdar[ix] = get_rhs_lambdar(hat_D2_shift, Delta_U, Delta_ULL, bar_div_shift, 
-                                          bar_D_div_shift, bar_gamma_UU, bar_A_UU, lapse[ix], dlapsedx[ix], 
-                                          dphidx[ix], dKdx[ix], matter_Si)
+                                          bar_D_div_shift, bar_gamma_UU, bar_A_UU, lapse[ix],
+                                          dlapsedx[ix], dphidx[ix], dKdx[ix], matter_Si)
         
         # Add advection to time derivatives
         rhs_phi[ix]     += shiftr[ix] * dphidx[ix]

@@ -113,17 +113,17 @@ def get_diagnostics(solution) :
         
             # rescaled \bar\gamma_ij
             r_gamma_LL = get_rescaled_metric(h)
+            r_gamma_UU = get_rescaled_inverse_metric(h)
         
             # (unscaled) \bar\gamma_ij and \bar\gamma^ij
             bar_gamma_LL = get_metric(r_here, h)
             bar_gamma_UU = get_inverse_metric(r_here, h)
         
-            # \bar A_ij and its trace, \bar A_ij \bar A^ij
+            # \bar A_ij, \bar A^ij and the trace A_i^i, then Asquared = \bar A_ij \bar A^ij
             bar_A_LL = get_A_LL(r_here, a)
-            bar_A_UU = get_A_UU(bar_A_LL, bar_gamma_UU)
-            traceA   = get_trace_A(r_here, a, bar_gamma_UU)
-            Asquared = get_Asquared(r_here, a, bar_gamma_UU)
-            trace_A2 = get_trace(bar_A_LL, bar_A_UU)
+            bar_A_UU = get_A_UU(a, r_gamma_UU)
+            traceA   = get_trace_A(a, r_gamma_UU)
+            Asquared = get_Asquared(a, r_gamma_UU)
         
             # The connections Delta^i, Delta^i_jk and Delta_ijk
             Delta_U, Delta_ULL, Delta_LLL  = get_connection(r_here, bar_gamma_UU, bar_gamma_LL, h, dhdr)
@@ -141,7 +141,7 @@ def get_diagnostics(solution) :
             #################################################################
 
             # Get the Ham constraint eqn (13) of Baumgarte https://arxiv.org/abs/1211.6632
-            Ham_i[ix] = (  two_thirds * K[ix] * K[ix] - trace_A2
+            Ham_i[ix] = (  two_thirds * K[ix] * K[ix] - Asquared
                          + em4phi * ( bar_R
                                       - 8.0 * bar_gamma_UU[i_r][i_r] * (dphidx[ix] * dphidx[ix] 
                                                                         + d2phidx2[ix])

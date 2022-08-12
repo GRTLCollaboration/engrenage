@@ -6,10 +6,16 @@ import numpy as np
 from myparams import *
 from source.tensoralgebra import *
 
-def get_matter_rhs(u, v, dudr, d2udx2, bar_gamma_UU, em4phi, dphidr, K, lapse, dlapsedr) :
+def get_matter_rhs(u, v, dudr, d2udr2, bar_gamma_UU, em4phi, 
+                   dphidr, K, lapse, dlapsedr, conformal_chris) :
+    
     dudt =  lapse * v
     dvdt =  lapse * K * v + bar_gamma_UU[i_r][i_r] * em4phi * (2.0 * lapse * dphidr * dudr 
-                                                               + lapse * d2udx2 + 0.0 * dlapsedr * dudr)
+                                                               + lapse * d2udr2
+                                                               + dlapsedr * dudr)
+    for i in range(0, SPACEDIM): 
+        for j in range(0, SPACEDIM):
+            dvdt +=  - em4phi * lapse * bar_gamma_UU[i][j] * conformal_chris[i_r][i][j] * dudr
     
     # Add mass term
     dVdu = scalar_mu * scalar_mu * u
