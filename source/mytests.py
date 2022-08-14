@@ -29,8 +29,9 @@ def get_test_vars_values_1() :
         test_vars_values[ix + idx_lapse * N] = 1.0
         # note that we choose that the determinant \bar{gamma} = \hat{gamma} initially
         grr = 1.0 + r_i * r_i * np.exp(-r_i)
-        gtt_over_r2 = 1.0 / grr
-        gpp_over_r2sintheta = 1.0
+        gtt_over_r2 = grr**(-0.5)
+        # The following is required for spherical symmetry
+        gpp_over_r2sintheta = gtt_over_r2
         phys_gamma_over_r4sin2theta = grr * gtt_over_r2 * gpp_over_r2sintheta
         phi_here = 1.0/12.0 * np.log(phys_gamma_over_r4sin2theta)
         test_vars_values[ix + idx_phi * N]   = phi_here
@@ -122,7 +123,8 @@ def get_test_vars_values_2() :
         f = 1.0 + r_i * r_i * np.exp(-r_i)
         grr = f
         gtt_over_r2 = f
-        gpp_over_r2sintheta = f
+        # The following is required for spherical symmetry
+        gpp_over_r2sintheta = gtt_over_r2
         phys_gamma_over_r4sin2theta = grr * gtt_over_r2 * gpp_over_r2sintheta
         phi_here = 1.0/12.0 * np.log(phys_gamma_over_r4sin2theta)
         test_vars_values[ix + idx_phi * N]   = phi_here

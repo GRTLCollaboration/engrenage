@@ -40,14 +40,17 @@ def get_initial_vars_values() :
         initial_vars_values[ix + idx_lapse * N] = f_lapse(r_i)
         # note that we choose that the determinant \bar{gamma} = \hat{gamma} initially
         grr_here = f_grr(r_i)
-        phys_gamma_over_r4sin2theta = grr_here
+        gtt_over_r2 = 1.0
+        # The following is required for spherical symmetry
+        gpp_over_r2sintheta = gtt_over_r2
+        phys_gamma_over_r4sin2theta = grr_here * gtt_over_r2 * gpp_over_r2sintheta
         # Note sign error in Baumgarte eqn (2) 
         phi_here = 1.0/12.0 * np.log(phys_gamma_over_r4sin2theta)
         initial_vars_values[ix + idx_phi * N]   = phi_here
         em4phi = np.exp(-4.0*phi_here)
         initial_vars_values[ix + idx_hrr * N]   = em4phi * grr_here - 1
-        initial_vars_values[ix + idx_htt * N]   = em4phi - 1
-        initial_vars_values[ix + idx_hpp * N]   = em4phi - 1
+        initial_vars_values[ix + idx_htt * N]      = em4phi * gtt_over_r2 - 1.0
+        initial_vars_values[ix + idx_hpp * N]      = em4phi * gpp_over_r2sintheta - 1.0
         
     # overwrite outer boundaries with extrapolation (zeroth order)
     for ivar in range(0, NUM_VARS) :

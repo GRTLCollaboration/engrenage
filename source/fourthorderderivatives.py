@@ -32,6 +32,28 @@ def get_dfdx(f) :
         
     return f_x
 
+ddx_stencil_left  = oneoverdx * np.array([-1., +6., -18., +10.,  +3.,  0.,  0.]) / 12.0
+ddx_stencil_right = oneoverdx * np.array([ 0.,  0.,  -3., -10., +18., -6., +1.]) / 12.0
+
+# advective derivative
+def get_dfdx_advec_L(f) :
+    f_x = np.convolve(f, ddx_stencil_left, mode='same')       
+        
+    # Clear out the ghost zones
+    f_x[0:num_ghosts] = 0.
+    f_x[-num_ghosts:] = 0.
+        
+    return f_x
+
+def get_dfdx_advec_R(f) :
+    f_x = np.convolve(f, ddx_stencil_right, mode='same')        
+        
+    # Clear out the ghost zones
+    f_x[0:num_ghosts] = 0.
+    f_x[-num_ghosts:] = 0.
+        
+    return f_x
+
 # 2N = 6 Kreiss Oliger dissipation
 def get_dissipation(f) :
     diss_x = np.zeros_like(f)

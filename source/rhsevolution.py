@@ -81,6 +81,39 @@ def get_rhs(vars_vec, t_i, p, q) :
     dbrdx      = get_dfdx(br)
     dlapsedx   = get_dfdx(lapse)
     
+    # first derivatives - advec left and right
+    dudx_advec_L       = get_dfdx_advec_L(u)
+    dvdx_advec_L       = get_dfdx_advec_L(v)
+    dphidx_advec_L     = get_dfdx_advec_L(phi)
+    dhrrdx_advec_L     = get_dfdx_advec_L(hrr)
+    dhttdx_advec_L     = get_dfdx_advec_L(htt)
+    dhppdx_advec_L     = get_dfdx_advec_L(hpp)
+    darrdx_advec_L     = get_dfdx_advec_L(arr)
+    dattdx_advec_L     = get_dfdx_advec_L(att)
+    dappdx_advec_L     = get_dfdx_advec_L(app)
+    dKdx_advec_L       = get_dfdx_advec_L(K)
+    dlambdardx_advec_L = get_dfdx_advec_L(lambdar)
+    dshiftrdx_advec_L  = get_dfdx_advec_L(shiftr)
+    dshiftrLdx_advec_L = get_dfdx_advec_L(shiftrL)
+    dbrdx_advec_L      = get_dfdx_advec_L(br)
+    dlapsedx_advec_L   = get_dfdx_advec_L(lapse)
+    
+    dudx_advec_R       = get_dfdx_advec_R(u)
+    dvdx_advec_R       = get_dfdx_advec_R(v)
+    dphidx_advec_R     = get_dfdx_advec_R(phi)
+    dhrrdx_advec_R     = get_dfdx_advec_R(hrr)
+    dhttdx_advec_R     = get_dfdx_advec_R(htt)
+    dhppdx_advec_R     = get_dfdx_advec_R(hpp)
+    darrdx_advec_R     = get_dfdx_advec_R(arr)
+    dattdx_advec_R     = get_dfdx_advec_R(att)
+    dappdx_advec_R     = get_dfdx_advec_R(app)
+    dKdx_advec_R       = get_dfdx_advec_R(K)
+    dlambdardx_advec_R = get_dfdx_advec_R(lambdar)
+    dshiftrdx_advec_R  = get_dfdx_advec_R(shiftr)
+    dshiftrLdx_advec_R = get_dfdx_advec_R(shiftrL)
+    dbrdx_advec_R      = get_dfdx_advec_R(br)
+    dlapsedx_advec_R   = get_dfdx_advec_R(lapse)  
+    
     ####################################################################################################
     
     # make containers for rhs values
@@ -148,29 +181,7 @@ def get_rhs(vars_vec, t_i, p, q) :
         bar_A_UU = get_A_UU(a, r_gamma_UU)
         traceA   = get_trace_A(a, r_gamma_UU)
         Asquared = get_Asquared(a, r_gamma_UU)
-        
-        # This is the conformal divergence of the shift \bar D_i \beta^i
-        # We use the fact that the determinant of the conformal metric is 
-        # fixed to that of the flat space metric in spherical coords
-        bar_div_shift = dshiftrdx[ix] + 2.0 / r_here * shiftr[ix]
-        # This is D^r (\bar D_i \beta^i) note the raised index of r
-        bar_D_div_shift = bar_gamma_UU[i_r][i_r] * (d2shiftrdx2[ix] 
-                                                    + 2.0 / r_here * dshiftrdx[ix] 
-                                                    - 2.0 / r_here / r_here * shiftr[ix])
-        
-        # Same trick for \bar D_k \bar D^k lapse
-        bar_D2_lapse = bar_gamma_UU[i_r][i_r] * (d2lapsedx2[ix]
-                                                + dlapsedx[ix] * dhrrdx[ix] * bar_gamma_UU[i_r][i_r]
-                                                + 2.0 / r_here * dlapsedx[ix])
-        
-        # This is \hat D_i shift_j (note lowered indices)
-        hat_D_shift = np.zeros_like(rank_2_spatial_tensor)
-        hat_D_shift[i_r][i_r] = dshiftrLdx[ix]
-        hat_D_shift[i_t][i_t] = - flat_chris[i_r][i_t][i_t] * shiftrL[ix]
-        hat_D_shift[i_p][i_p] = - flat_chris[i_r][i_p][i_p] * shiftrL[ix]
-        # \bar \gamma^ij \hat D_i \hat D_j shift^r
-        hat_D2_shift = bar_gamma_UU[i_r][i_r] * d2shiftrdx2[ix]
-                
+
         # The connections Delta^i, Delta^i_jk and Delta_ijk
         Delta_U, Delta_ULL, Delta_LLL  = get_connection(r_here, bar_gamma_UU, bar_gamma_LL, h, dhdr)
         bar_Rij = get_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar[ix], dlambdardx[ix], 
@@ -178,6 +189,37 @@ def get_rhs(vars_vec, t_i, p, q) :
 
         # \bar \gamma^i_jk
         conformal_chris = get_conformal_chris(Delta_ULL, r_here)
+        
+        # This is the conformal divergence of the shift \bar D_i \beta^i
+        bar_div_shift = dshiftrdx[ix] + (  conformal_chris[i_r][i_r][i_r] * shiftr[ix]
+                                         + conformal_chris[i_t][i_t][i_r] * shiftr[ix]
+                                         + conformal_chris[i_p][i_p][i_r] * shiftr[ix] )
+        
+        # This is D^r (\bar D_i \beta^i) note the raised index of r
+        bar_D_div_shift = bar_gamma_UU[i_r][i_r] * (d2shiftrdx2[ix] 
+                                                    + 2.0 / r_here * dshiftrdx[ix] 
+                                                    - 2.0 / r_here / r_here * shiftr[ix])
+        
+        # Same for \bar D^k \bar D_k lapse
+        bar_D2_lapse = (bar_gamma_UU[i_r][i_r] * (d2lapsedx2[ix]
+                                                 - conformal_chris[i_r][i_r][i_r] * dlapsedx[ix])
+                        - bar_gamma_UU[i_t][i_t] * conformal_chris[i_r][i_t][i_t] * dlapsedx[ix]
+                        - bar_gamma_UU[i_p][i_p] * conformal_chris[i_r][i_p][i_p] * dlapsedx[ix] )
+        
+        # This is \hat D_i shift_j (note lowered indices)
+        hat_D_shift = np.zeros_like(rank_2_spatial_tensor)
+        hat_D_shift[i_r][i_r] = dshiftrLdx[ix]
+        hat_D_shift[i_t][i_t] = - flat_chris[i_r][i_t][i_t] * shiftrL[ix]
+        hat_D_shift[i_p][i_p] = - flat_chris[i_r][i_p][i_p] * shiftrL[ix]
+        
+        # \bar \gamma^ij \hat D_i \hat D_j shift^r
+        hat_D2_shift = (  bar_gamma_UU[i_r][i_r] * d2shiftrdx2[ix] 
+                        + bar_gamma_UU[i_t][i_t] * flat_chris[i_r][i_t][i_t] * dshiftrdx[ix]
+                        + bar_gamma_UU[i_p][i_p] * flat_chris[i_r][i_p][i_p] * dshiftrdx[ix]
+                        + ( bar_gamma_UU[i_t][i_t] * flat_chris[i_r][i_t][i_t] 
+                                                   * flat_chris[i_t][i_r][i_t]  * shiftr[ix])
+                        + ( bar_gamma_UU[i_p][i_p] * flat_chris[i_r][i_p][i_p] 
+                                                   * flat_chris[i_p][i_r][i_p]  * shiftr[ix]) )
         
         # Matter sources
         matter_rho            = get_rho( u[ix], dudx[ix], v[ix], bar_gamma_UU, em4phi )
@@ -220,16 +262,34 @@ def get_rhs(vars_vec, t_i, p, q) :
                                           dlapsedx[ix], dphidx[ix], dKdx[ix], matter_Si)
         
         # Add advection to time derivatives
-        rhs_phi[ix]     += shiftr[ix] * dphidx[ix]
-        rhs_hrr[ix]     = rhs_h[i_r][i_r] + shiftr[ix] * dhrrdx[ix] - 2.0 * hrr[ix] * dshiftrdx[ix]
-        rhs_htt[ix]     = rhs_h[i_t][i_t] + shiftr[ix] * dhttdx[ix]      
-        rhs_hpp[ix]     = rhs_h[i_p][i_p] + shiftr[ix] * dhppdx[ix]       
-        rhs_K[ix]       += shiftr[ix] * dKdx[ix]
-        rhs_arr[ix]     = rhs_a[i_r][i_r] + shiftr[ix] * darrdx[ix] - 2.0 * arr[ix] * dshiftrdx[ix] 
-        rhs_att[ix]     = rhs_a[i_t][i_t] + shiftr[ix] * dattdx[ix]        
-        rhs_app[ix]     = rhs_a[i_p][i_p] + shiftr[ix] * dappdx[ix] 
-        rhs_lambdar[ix] += shiftr[ix] * dlambdardx[ix] - lambdar[ix] * dshiftrdx[ix]       
-
+        
+        if (shiftr[ix] < 0) :
+            rhs_phi[ix]     += shiftr[ix] * dphidx_advec_L[ix]
+            rhs_hrr[ix]     = (rhs_h[i_r][i_r] + shiftr[ix] * dhrrdx_advec_L[ix] 
+                               - 2.0 * hrr[ix] * dshiftrdx[ix])
+            rhs_htt[ix]     = rhs_h[i_t][i_t] + shiftr[ix] * dhttdx_advec_L[ix]      
+            rhs_hpp[ix]     = rhs_h[i_p][i_p] + shiftr[ix] * dhppdx_advec_L[ix]       
+            rhs_K[ix]       += shiftr[ix] * dKdx_advec_L[ix]
+            rhs_arr[ix]     = (rhs_a[i_r][i_r] + shiftr[ix] * darrdx_advec_L[ix] 
+                               - 2.0 * arr[ix] * dshiftrdx[ix])
+            rhs_att[ix]     = rhs_a[i_t][i_t] + shiftr[ix] * dattdx_advec_L[ix]        
+            rhs_app[ix]     = rhs_a[i_p][i_p] + shiftr[ix] * dappdx_advec_L[ix] 
+            rhs_lambdar[ix] += (shiftr[ix] * dlambdardx_advec_L[ix] 
+                                - lambdar[ix] * dshiftrdx[ix])
+        else : 
+            rhs_phi[ix]     += shiftr[ix] * dphidx_advec_R[ix]
+            rhs_hrr[ix]     = (rhs_h[i_r][i_r] + shiftr[ix] * dhrrdx_advec_R[ix] 
+                               - 2.0 * hrr[ix] * dshiftrdx[ix])
+            rhs_htt[ix]     = rhs_h[i_t][i_t] + shiftr[ix] * dhttdx_advec_R[ix]      
+            rhs_hpp[ix]     = rhs_h[i_p][i_p] + shiftr[ix] * dhppdx_advec_R[ix]       
+            rhs_K[ix]       += shiftr[ix] * dKdx_advec_L[ix]
+            rhs_arr[ix]     = (rhs_a[i_r][i_r] + shiftr[ix] * darrdx_advec_R[ix] 
+                               - 2.0 * arr[ix] * dshiftrdx[ix])
+            rhs_att[ix]     = rhs_a[i_t][i_t] + shiftr[ix] * dattdx_advec_R[ix]        
+            rhs_app[ix]     = rhs_a[i_p][i_p] + shiftr[ix] * dappdx_advec_R[ix] 
+            rhs_lambdar[ix] += (shiftr[ix] * dlambdardx_advec_R[ix] 
+                                - lambdar[ix] * dshiftrdx[ix])
+            
         # Set the gauge vars rhs
         rhs_br[ix]     = 0.75 * rhs_lambdar[ix] - eta * br[ix]
         rhs_shiftr[ix] = br[ix]
@@ -268,7 +328,8 @@ def get_rhs(vars_vec, t_i, p, q) :
     # finally add Kreiss Oliger dissipation
     diss = np.zeros_like(vars_vec) 
     for ivar in range(0, NUM_VARS) :
-        diss[(ivar-1)*N:ivar*N] = get_dissipation(vars_vec[(ivar-1)*N:ivar*N])
+        ivar_values = np.array(vars_vec[(ivar-1)*N:ivar*N])
+        diss[(ivar-1)*N:ivar*N] = get_dissipation(ivar_values)
     rhs += diss
     
     #################################################################################################### 

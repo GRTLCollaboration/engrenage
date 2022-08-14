@@ -84,7 +84,11 @@ def get_rhs_lambdar(hat_D2_shiftr, Delta_U, Delta_ULL, bar_div_shift, bar_D_div_
     dlambdardt = (hat_D2_shiftr 
                   + two_thirds * Delta_U[i_r] * bar_div_shift
                   + one_third * bar_D_div_shift
-                  - 2.0 * bar_A_UU[i_r][i_r] * (dlapsedr - 6.0 * lapse * dphidr)
+                  - 2.0 * bar_A_UU[i_r][i_r] * (dlapsedr 
+                                                - 6.0 * lapse * dphidr
+                                                - lapse * Delta_ULL[i_r][i_r][i_r])
+                  + 2.0 * bar_A_UU[i_t][i_t] * lapse * Delta_ULL[i_r][i_t][i_t]
+                  + 2.0 * bar_A_UU[i_p][i_p] * lapse * Delta_ULL[i_r][i_p][i_p]
                   - four_thirds * lapse * bar_gamma_UU[i_r][i_r] * dKdr
                   - 2.0 *  eight_pi_G * lapse * bar_gamma_UU[i_r][i_r] * Si[i_r])
                   

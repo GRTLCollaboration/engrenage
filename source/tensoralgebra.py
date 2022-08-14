@@ -202,17 +202,24 @@ def get_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar, dlambardr,
             ricci[i][j] += -0.5 * hat_D2_bar_gamma[i][j]
                 
             for k in range(0, SPACEDIM):
-                ricci[i][j] += (   0.5 * (bar_gamma_LL[k][i] * hat_D_Lambda[j][k] + bar_gamma_LL[k][j] * hat_D_Lambda[i][k])
-                                 + 0.5 * (Delta_U[k] * Delta_LLL[i][j][k] + Delta_U[k] * Delta_LLL[j][i][k]) )
+                ricci[i][j] += (   0.5 * (bar_gamma_LL[k][i] * hat_D_Lambda[j][k] + 
+                                          bar_gamma_LL[k][j] * hat_D_Lambda[i][k])
+                                 + 0.5 * (Delta_U[k] * Delta_LLL[i][j][k] + 
+                                          Delta_U[k] * Delta_LLL[j][i][k]) )
                 
                 for l in range(0, SPACEDIM):
                     for m in range(0, SPACEDIM): 
-                        ricci[i][j] += bar_gamma_UU[k][l] * (  Delta_ULL[m][k][i] * Delta_LLL[j][m][l]
-                                                             + Delta_ULL[m][k][j] * Delta_LLL[i][m][l]
-                                                             + Delta_ULL[m][i][k] * Delta_LLL[m][j][l] )
+                        ricci[i][j] += bar_gamma_UU[k][l] * (  Delta_ULL[m][k][i] * 
+                                                               Delta_LLL[j][m][l]
+                                                             + Delta_ULL[m][k][j] * 
+                                                               Delta_LLL[i][m][l]
+                                                             + Delta_ULL[m][i][k] * 
+                                                               Delta_LLL[m][j][l] )
             
     return ricci
 
+# \hat D_i \Lambda^j
+# See eqn (26) in Baumgarte https://arxiv.org/abs/1211.6632
 def get_hat_D_Lambda(r_here, lambdar, dlambardr) :
     
     # Make an array for \hat D_i \Lambda^j
@@ -231,7 +238,7 @@ def get_hat_D_Lambda(r_here, lambdar, dlambardr) :
                 
     return hat_D_Lambda
 
-# \hat D_i \Lambda^j
+# \bar|gamma^kl \hat D_k \hat D_l \bar\gamma_ij 
 # See eqn (27) in Baumgarte https://arxiv.org/abs/1211.6632
 def get_hat_D2_bar_gamma(r_here, h, dhdr, d2hdr2, bar_gamma_UU) :
     
@@ -245,6 +252,7 @@ def get_hat_D2_bar_gamma(r_here, h, dhdr, d2hdr2, bar_gamma_UU) :
     
     # explicitly add non zero terms in spherical symmetry
     hat_D2_bar_gamma[i_r][i_r] = bar_gamma_UU[i_r][i_r] *   d2hdr2[i_r][i_r]
+    
     hat_D2_bar_gamma[i_t][i_t] = bar_gamma_UU[i_r][i_r] * ( d2hdr2[i_t][i_t] * r2
                                                             + dhdr[i_t][i_t] * 2.0 * r_here )
     hat_D2_bar_gamma[i_p][i_p] = bar_gamma_UU[i_r][i_r] * ( d2hdr2[i_p][i_p] * r2sin2theta 
