@@ -23,6 +23,7 @@ def get_rhs_h(r_here, r_gamma_LL, lapse, traceA, bar_div_shift, hat_D_shift, a) 
             # note that trace of \bar A_ij = 0 is enforced dynamically using the first term 
             # as in Etienne https://arxiv.org/abs/1712.07658v2 eqn (11a)
             # recall that h is the rescaled quantity so we need to scale
+            # Also note that there is a typo in Etienne
             dhdt[i][j] += ( two_thirds * r_gamma_LL[i][j] * (lapse * traceA - bar_div_shift)
                              + inv_scaling[i] * inv_scaling[j] * (hat_D_shift[i][j] + hat_D_shift[j][i])
                              - 2.0 * lapse * a[i][j])

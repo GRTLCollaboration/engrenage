@@ -150,7 +150,7 @@ def get_Asquared(a, r_gamma_UU) :
                 for l in range(0, SPACEDIM):  
                     Asquared += ( a[i][j] *  a[k][l]
                                  * r_gamma_UU[i][k] * r_gamma_UU[j][l])
-       
+
     return Asquared
 
 # Compute connection of the spatial metric

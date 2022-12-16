@@ -50,7 +50,7 @@ def get_rhs(vars_vec, t_i, p, q) :
         hpp[ix] = (1.0 + hpp[ix])/np.power(determinant,1./3) - 1.0
         
         # Also just for convenience work out the shift with lowered index
-        shiftrL[ix] = shiftr[ix] * hrr[ix] * np.exp(4.0*phi[ix])
+        shiftrL[ix] = shiftr[ix] * (1.0+hrr[ix]) * np.exp(4.0*phi[ix])
     
     ####################################################################################################
 
@@ -189,28 +189,28 @@ def get_rhs(vars_vec, t_i, p, q) :
 
         # \bar \gamma^i_jk
         conformal_chris = get_conformal_chris(Delta_ULL, r_here)
-        
+
         # This is the conformal divergence of the shift \bar D_i \beta^i
-        bar_div_shift = dshiftrdx[ix] + (  conformal_chris[i_r][i_r][i_r] * shiftr[ix]
-                                         + conformal_chris[i_t][i_t][i_r] * shiftr[ix]
-                                         + conformal_chris[i_p][i_p][i_r] * shiftr[ix] )
-        
-        # This is D^r (\bar D_i \beta^i) note the raised index of r
+        # Use the fact that the conformal metric determinant is \hat \gamma = r^4 sin2theta
+        bar_div_shift =  (dshiftrdx[ix] + 2.0 * shiftr[ix] / r_here)
+               
+        # This is \bar D^r (\bar D_i \beta^i) note the raised index of r
         bar_D_div_shift = bar_gamma_UU[i_r][i_r] * (d2shiftrdx2[ix] 
                                                     + 2.0 / r_here * dshiftrdx[ix] 
                                                     - 2.0 / r_here / r_here * shiftr[ix])
         
         # Same for \bar D^k \bar D_k lapse
-        bar_D2_lapse = (bar_gamma_UU[i_r][i_r] * (d2lapsedx2[ix]
-                                                 - conformal_chris[i_r][i_r][i_r] * dlapsedx[ix])
+        # DEBUGGING THIS
+        bar_D2_lapse = (bar_gamma_UU[i_r][i_r] * (0.0*d2lapsedx2[ix]
+                                                 - 0.0*conformal_chris[i_r][i_r][i_r] * dlapsedx[ix])
                         - bar_gamma_UU[i_t][i_t] * conformal_chris[i_r][i_t][i_t] * dlapsedx[ix]
-                        - bar_gamma_UU[i_p][i_p] * conformal_chris[i_r][i_p][i_p] * dlapsedx[ix] )
+                        - 0.0*bar_gamma_UU[i_p][i_p] * conformal_chris[i_r][i_p][i_p] * dlapsedx[ix] )
         
-        # This is \hat D_i shift_j (note lowered indices)
+        # This is \hat\gamma_jk \hat D_i shift^k (note Etienne paper typo - this is not \hat D_i \beta_j)
         hat_D_shift = np.zeros_like(rank_2_spatial_tensor)
-        hat_D_shift[i_r][i_r] = dshiftrLdx[ix]
-        hat_D_shift[i_t][i_t] = - flat_chris[i_r][i_t][i_t] * shiftrL[ix]
-        hat_D_shift[i_p][i_p] = - flat_chris[i_r][i_p][i_p] * shiftrL[ix]
+        hat_D_shift[i_r][i_r] = dshiftrdx[ix]
+        hat_D_shift[i_t][i_t] = r_here * r_here * flat_chris[i_t][i_t][i_r] * shiftr[ix]
+        hat_D_shift[i_p][i_p] = r_here * r_here * sin2theta * flat_chris[i_p][i_p][i_r] * shiftr[ix]
         
         # \bar \gamma^ij \hat D_i \hat D_j shift^r
         hat_D2_shift = (  bar_gamma_UU[i_r][i_r] * d2shiftrdx2[ix] 
@@ -250,7 +250,7 @@ def get_rhs(vars_vec, t_i, p, q) :
                                     hat_D_shift, a)
         
         rhs_K[ix]       = get_rhs_K(lapse[ix], K[ix], Asquared, em4phi, bar_D2_lapse, 
-                                    dlapsedx[ix], dphidx[ix], bar_gamma_UU, matter_rho, matter_S)       
+                                    dlapsedx[ix], dphidx[ix], bar_gamma_UU, matter_rho, matter_S)   
         
         rhs_a           = get_rhs_a(a, bar_div_shift, lapse[ix], K[ix], em4phi, bar_Rij,
                                     r_here, Delta_ULL, bar_gamma_UU, bar_A_UU, bar_A_LL,
@@ -261,40 +261,49 @@ def get_rhs(vars_vec, t_i, p, q) :
                                           bar_D_div_shift, bar_gamma_UU, bar_A_UU, lapse[ix],
                                           dlapsedx[ix], dphidx[ix], dKdx[ix], matter_Si)
         
-        # Add advection to time derivatives
-        
+        # Add advection to time derivatives NEED TO CHECK AND ADD ADVEC STUFF      
         if (shiftr[ix] < 0) :
-            rhs_phi[ix]     += shiftr[ix] * dphidx_advec_L[ix]
-            rhs_hrr[ix]     = (rhs_h[i_r][i_r] + shiftr[ix] * dhrrdx_advec_L[ix] 
-                               - 2.0 * hrr[ix] * dshiftrdx[ix])
-            rhs_htt[ix]     = rhs_h[i_t][i_t] + shiftr[ix] * dhttdx_advec_L[ix]      
-            rhs_hpp[ix]     = rhs_h[i_p][i_p] + shiftr[ix] * dhppdx_advec_L[ix]       
-            rhs_K[ix]       += shiftr[ix] * dKdx_advec_L[ix]
-            rhs_arr[ix]     = (rhs_a[i_r][i_r] + shiftr[ix] * darrdx_advec_L[ix] 
-                               - 2.0 * arr[ix] * dshiftrdx[ix])
-            rhs_att[ix]     = rhs_a[i_t][i_t] + shiftr[ix] * dattdx_advec_L[ix]        
-            rhs_app[ix]     = rhs_a[i_p][i_p] + shiftr[ix] * dappdx_advec_L[ix] 
-            rhs_lambdar[ix] += (shiftr[ix] * dlambdardx_advec_L[ix] 
+            rhs_phi[ix]     += shiftr[ix] * dphidx[ix]
+            rhs_hrr[ix]     = (rhs_h[i_r][i_r] + shiftr[ix] * dhrrdx[ix] 
+                               + 2.0 * hrr[ix] * dshiftrdx[ix])
+            rhs_htt[ix]     = (rhs_h[i_t][i_t] + shiftr[ix] * dhttdx[ix]
+                               + 2.0 * shiftr[ix] * 1.0/r_here * h[i_t][i_t])
+            rhs_hpp[ix]     = (rhs_h[i_p][i_p] + shiftr[ix] * dhppdx[ix]
+                               + 2.0 * shiftr[ix] * 1.0/r_here * h[i_p][i_p])
+            rhs_K[ix]       += shiftr[ix] * dKdx[ix]
+            rhs_arr[ix]     = (rhs_a[i_r][i_r] + shiftr[ix] * darrdx[ix] 
+                               + 2.0 * arr[ix] * dshiftrdx[ix])
+            rhs_att[ix]     = (rhs_a[i_t][i_t] + shiftr[ix] * dattdx[ix]
+                               + 2.0 * shiftr[ix] * 1.0/r_here * a[i_t][i_t])
+            rhs_app[ix]     = (rhs_a[i_p][i_p] + shiftr[ix] * dappdx[ix]
+                               + 2.0 * shiftr[ix] * 1.0/r_here * a[i_p][i_p])
+            rhs_lambdar[ix] += (shiftr[ix] * dlambdardx[ix] 
                                 - lambdar[ix] * dshiftrdx[ix])
         else : 
-            rhs_phi[ix]     += shiftr[ix] * dphidx_advec_R[ix]
-            rhs_hrr[ix]     = (rhs_h[i_r][i_r] + shiftr[ix] * dhrrdx_advec_R[ix] 
-                               - 2.0 * hrr[ix] * dshiftrdx[ix])
-            rhs_htt[ix]     = rhs_h[i_t][i_t] + shiftr[ix] * dhttdx_advec_R[ix]      
-            rhs_hpp[ix]     = rhs_h[i_p][i_p] + shiftr[ix] * dhppdx_advec_R[ix]       
-            rhs_K[ix]       += shiftr[ix] * dKdx_advec_L[ix]
-            rhs_arr[ix]     = (rhs_a[i_r][i_r] + shiftr[ix] * darrdx_advec_R[ix] 
-                               - 2.0 * arr[ix] * dshiftrdx[ix])
-            rhs_att[ix]     = rhs_a[i_t][i_t] + shiftr[ix] * dattdx_advec_R[ix]        
-            rhs_app[ix]     = rhs_a[i_p][i_p] + shiftr[ix] * dappdx_advec_R[ix] 
-            rhs_lambdar[ix] += (shiftr[ix] * dlambdardx_advec_R[ix] 
+            rhs_phi[ix]     += shiftr[ix] * dphidx[ix] # ?- shiftr[ix] * dphidx_advec_R[ix]
+            rhs_hrr[ix]     = (rhs_h[i_r][i_r] + shiftr[ix] * dhrrdx[ix] #dhrrdx_advec_R[ix] 
+                               + 2.0 * hrr[ix] * dshiftrdx[ix])
+            rhs_htt[ix]     = (rhs_h[i_t][i_t] + shiftr[ix] * dhttdx[ix]
+                               + 2.0 * shiftr[ix] * 1.0/r_here * h[i_t][i_t])
+            rhs_hpp[ix]     = (rhs_h[i_p][i_p] + shiftr[ix] * dhppdx[ix]
+                               + 2.0 * shiftr[ix] * 1.0/r_here * h[i_p][i_p])
+            rhs_K[ix]       += shiftr[ix] * dKdx[ix]
+            rhs_arr[ix]     = (rhs_a[i_r][i_r] + shiftr[ix] * darrdx[ix] 
+                               + 2.0 * arr[ix] * dshiftrdx[ix])
+            rhs_att[ix]     = (rhs_a[i_t][i_t] + shiftr[ix] * dattdx[ix]
+                               + 2.0 * shiftr[ix] * 1.0/r_here * a[i_t][i_t])
+            rhs_app[ix]     = (rhs_a[i_p][i_p] + shiftr[ix] * dappdx[ix]
+                               + 2.0 * shiftr[ix] * 1.0/r_here * a[i_p][i_p])
+            rhs_lambdar[ix] += (shiftr[ix] * dlambdardx[ix] 
                                 - lambdar[ix] * dshiftrdx[ix])
             
         # Set the gauge vars rhs
         rhs_br[ix]     = 0.75 * rhs_lambdar[ix] - eta * br[ix]
         rhs_shiftr[ix] = br[ix]
         rhs_lapse[ix]  = - 2.0 * lapse[ix] * K[ix] + shiftr[ix] * dlapsedx[ix]
-
+        
+        #DEBUG:
+        rhs_K[ix] = bar_D2_lapse
         
     # end of rhs iteration over grid points   
     ####################################################################################################        
