@@ -301,9 +301,6 @@ def get_rhs(vars_vec, t_i, p, q) :
         rhs_shiftr[ix] = br[ix]
         rhs_lapse[ix]  = - 2.0 * lapse[ix] * K[ix] + shiftr[ix] * dlapsedx[ix]
         
-        #DEBUG:
-        #rhs_lambdar[ix] = bar_A_UU[i_t][i_t]
-        
     # end of rhs iteration over grid points   
     ####################################################################################################        
         

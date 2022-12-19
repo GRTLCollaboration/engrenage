@@ -16,7 +16,7 @@ from source.bssn_rhs import *
 # Assumes 3 ghost cells at either end of the vector of values
 
 # klein gordon eqn
-def get_diagnostics(solutions_over_time) :
+def get_diagnostics(solutions_over_time, t) :
 
     start = time.time()
     
