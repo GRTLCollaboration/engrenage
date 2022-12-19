@@ -229,7 +229,7 @@ def get_test_vars_values_bh() :
         test_vars_values[ix + idx_hpp * N]   = em4phi * gpp_over_r2sintheta - 1.0
         
         # set non zero lapse, shift
-        lapse = np.sqrt(1.0 + H)
+        lapse = 1.0/np.sqrt(1.0 + H)
         test_vars_values[ix + idx_lapse * N]   = lapse
         test_vars_values[ix + idx_shiftr * N]   = H / grr
         
@@ -240,7 +240,7 @@ def get_test_vars_values_bh() :
         
         #K_ij = (D_i shift_j + D_j shift_i) / lapse / 2 (since dgammadt = 0)        
         Krr = (dHdr - chris_rrr * H) / lapse
-        Ktt_over_r2 = - chris_rtt * H / lapse / r_i / r_i
+        Ktt_over_r2 = - chris_rtt * H / lapse / r_i / r_i # 2.0 * lapse / r_i / r_i
         Kpp_over_r2sintheta = - chris_rpp * H / lapse / r_i / r_i / sin2theta
         K = Krr / grr + Ktt_over_r2 / gtt_over_r2  + Kpp_over_r2sintheta / gpp_over_r2sintheta
         test_vars_values[ix + idx_arr * N]   = em4phi * (Krr - 1.0/3.0 * grr * K)

@@ -178,7 +178,7 @@ def get_rhs(vars_vec, t_i, p, q) :
         
         # \bar A_ij, \bar A^ij and the trace A_i^i, then Asquared = \bar A_ij \bar A^ij
         bar_A_LL = get_A_LL(r_here, a)
-        bar_A_UU = get_A_UU(a, r_gamma_UU)
+        bar_A_UU = get_A_UU(a, r_gamma_UU, r_here)
         traceA   = get_trace_A(a, r_gamma_UU)
         Asquared = get_Asquared(a, r_gamma_UU)
 
@@ -200,11 +200,10 @@ def get_rhs(vars_vec, t_i, p, q) :
                                                     - 2.0 / r_here / r_here * shiftr[ix])
         
         # Same for \bar D^k \bar D_k lapse
-        # DEBUGGING THIS
-        bar_D2_lapse = (bar_gamma_UU[i_r][i_r] * (0.0*d2lapsedx2[ix]
-                                                 - 0.0*conformal_chris[i_r][i_r][i_r] * dlapsedx[ix])
+        bar_D2_lapse = (bar_gamma_UU[i_r][i_r] * (d2lapsedx2[ix]
+                                                 - conformal_chris[i_r][i_r][i_r] * dlapsedx[ix])
                         - bar_gamma_UU[i_t][i_t] * conformal_chris[i_r][i_t][i_t] * dlapsedx[ix]
-                        - 0.0*bar_gamma_UU[i_p][i_p] * conformal_chris[i_r][i_p][i_p] * dlapsedx[ix] )
+                        - bar_gamma_UU[i_p][i_p] * conformal_chris[i_r][i_p][i_p] * dlapsedx[ix] )
         
         # This is \hat\gamma_jk \hat D_i shift^k (note Etienne paper typo - this is not \hat D_i \beta_j)
         hat_D_shift = np.zeros_like(rank_2_spatial_tensor)
@@ -214,8 +213,8 @@ def get_rhs(vars_vec, t_i, p, q) :
         
         # \bar \gamma^ij \hat D_i \hat D_j shift^r
         hat_D2_shift = (  bar_gamma_UU[i_r][i_r] * d2shiftrdx2[ix] 
-                        + bar_gamma_UU[i_t][i_t] * flat_chris[i_r][i_t][i_t] * dshiftrdx[ix]
-                        + bar_gamma_UU[i_p][i_p] * flat_chris[i_r][i_p][i_p] * dshiftrdx[ix]
+                        - bar_gamma_UU[i_t][i_t] * flat_chris[i_r][i_t][i_t] * dshiftrdx[ix]
+                        - bar_gamma_UU[i_p][i_p] * flat_chris[i_r][i_p][i_p] * dshiftrdx[ix]
                         + ( bar_gamma_UU[i_t][i_t] * flat_chris[i_r][i_t][i_t] 
                                                    * flat_chris[i_t][i_r][i_t]  * shiftr[ix])
                         + ( bar_gamma_UU[i_p][i_p] * flat_chris[i_r][i_p][i_p] 
@@ -303,7 +302,7 @@ def get_rhs(vars_vec, t_i, p, q) :
         rhs_lapse[ix]  = - 2.0 * lapse[ix] * K[ix] + shiftr[ix] * dlapsedx[ix]
         
         #DEBUG:
-        rhs_K[ix] = bar_D2_lapse
+        #rhs_lambdar[ix] = bar_A_UU[i_t][i_t]
         
     # end of rhs iteration over grid points   
     ####################################################################################################        

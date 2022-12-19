@@ -110,7 +110,7 @@ def get_diagnostics(solutions_over_time) :
         
             # \bar A_ij, \bar A^ij and the trace A_i^i, then Asquared = \bar A_ij \bar A^ij
             bar_A_LL = get_A_LL(r_here, a)
-            bar_A_UU = get_A_UU(a, r_gamma_UU)
+            bar_A_UU = get_A_UU(a, r_gamma_UU, r_here)
             traceA   = get_trace_A(a, r_gamma_UU)
             Asquared = get_Asquared(a, r_gamma_UU)
         

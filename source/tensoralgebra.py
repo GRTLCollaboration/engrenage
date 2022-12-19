@@ -119,14 +119,18 @@ def get_A_LL(r_here, a):
     return np.diag( scaling * scaling * np.diag(a) )
 
 # Compute the \bar A^ij given A_ij and \bar\gamma^ij
-def get_A_UU(a, r_gamma_UU):
+def get_A_UU(a, r_gamma_UU, r_here):
+
+    inv_scaling = np.array([1.0, 1.0/r_here , 1.0/r_here/sintheta])
     
     # Note that bar_gamma_UU is symmetric.
     # If it wasn't symmetric, we would need to be careful about
     # transposing when multiplying from the right.
     # multi_dot is kind of overkill here for 3x3 matrices...
     # but it's good to know about!
-    return np.linalg.multi_dot( [ r_gamma_UU, a, r_gamma_UU ] )
+    a_UU = np.linalg.multi_dot( [ r_gamma_UU, a, r_gamma_UU ] ) 
+    
+    return np.diag( inv_scaling * inv_scaling * np.diag(a_UU) )
 
 # Compute trace of (traceless part of) extrinsic curvature
 def get_trace_A(a, r_gamma_UU) :

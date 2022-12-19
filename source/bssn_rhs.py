@@ -92,10 +92,6 @@ def get_rhs_lambdar(hat_D2_shiftr, Delta_U, Delta_ULL, bar_div_shift, bar_D_div_
                   + 2.0 * bar_A_UU[i_p][i_p] * lapse * Delta_ULL[i_r][i_p][i_p]
                   - four_thirds * lapse * bar_gamma_UU[i_r][i_r] * dKdr
                   - 2.0 *  eight_pi_G * lapse * bar_gamma_UU[i_r][i_r] * Si[i_r])
-                  
-    for i in range(0, SPACEDIM):
-        for j in range(0, SPACEDIM):
-            dlambdardt += 2.0 * lapse * bar_A_UU[i][j] * Delta_ULL[i_r][i][j]
     
     return dlambdardt
 
