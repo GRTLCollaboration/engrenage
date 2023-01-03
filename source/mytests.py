@@ -8,9 +8,6 @@ from source.fourthorderderivatives import *
 import numpy as np
 from scipy.interpolate import interp1d
 
-# num ghosts is hardcoded to 3
-num_ghosts = 3
-
 # This routine gives us something where phi = 0 initially but bar_R and lambda are non trivial
 def get_test_vars_values_1(R, N_r) :
     

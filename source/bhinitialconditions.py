@@ -1,15 +1,12 @@
-# myinitialconditions.py
+# bhinitialconditions.py
 
-# set the initial conditions for all the variables
+# set the initial conditions for all the variables for an oscillaton
 
 from source.uservariables import *
 from source.tensoralgebra import *
 from source.fourthorderderivatives import *
 import numpy as np
 from scipy.interpolate import interp1d
-
-# number of ghosts fixed to 3
-num_ghosts = 3
 
 def get_initial_vars_values(R, N_r) :
     
@@ -22,44 +19,32 @@ def get_initial_vars_values(R, N_r) :
 
     initial_vars_values = np.zeros(NUM_VARS * N)
     
-    # Use oscilloton data to construct functions for the vars
-    grr0_data    = np.loadtxt("source/initial_data/grr0.csv")
-    lapse0_data  = np.loadtxt("source/initial_data/lapse0.csv")
-    v0_data      = np.loadtxt("source/initial_data/v0.csv")
-    
-    # set up grid in radial direction in areal polar coordinates
-    dR = 0.01;
-    length = np.size(grr0_data)
-    R = np.linspace(0, dR*(length-1), num=length)
-    f_grr   = interp1d(R, grr0_data)
-    f_lapse = interp1d(R, lapse0_data)
-    f_v     = interp1d(R, v0_data)
-    
     for ix in range(num_ghosts, N-num_ghosts) :
 
         # position on the grid
         r_i = r[ix]
+        GM = 1.0
 
         # scalar field values
-        initial_vars_values[ix + idx_u * N] = 0.0 # start at a moment where field is zero
-        initial_vars_values[ix + idx_v * N] = f_v(r_i)
+        initial_vars_values[ix + idx_u * N] = 0.0
+        initial_vars_values[ix + idx_v * N] = 0.0
  
         # non zero metric variables (note h_rr etc are rescaled difference from flat space so zero
-        # and conformal factor is zero for flat space)
-        initial_vars_values[ix + idx_lapse * N] = f_lapse(r_i)
+        # and conformal factor is zero for flat space)      
         # note that we choose that the determinant \bar{gamma} = \hat{gamma} initially
-        grr_here = f_grr(r_i)
-        gtt_over_r2 = 1.0
+        grr = (1 + 0.5 * GM/r_i)**4.0
+        gtt_over_r2 = grr
         # The following is required for spherical symmetry
         gpp_over_r2sintheta = gtt_over_r2
-        phys_gamma_over_r4sin2theta = grr_here * gtt_over_r2 * gpp_over_r2sintheta
+        phys_gamma_over_r4sin2theta = grr * gtt_over_r2 * gpp_over_r2sintheta
         # Note sign error in Baumgarte eqn (2) 
         phi_here = 1.0/12.0 * np.log(phys_gamma_over_r4sin2theta)
         initial_vars_values[ix + idx_phi * N]   = phi_here
         em4phi = np.exp(-4.0*phi_here)
-        initial_vars_values[ix + idx_hrr * N]   = em4phi * grr_here - 1
+        initial_vars_values[ix + idx_hrr * N]      = em4phi * grr - 1
         initial_vars_values[ix + idx_htt * N]      = em4phi * gtt_over_r2 - 1.0
         initial_vars_values[ix + idx_hpp * N]      = em4phi * gpp_over_r2sintheta - 1.0
+        initial_vars_values[ix + idx_lapse * N] = np.exp(-4.0*phi_here) # pre collapse the lapse  
         
     # overwrite outer boundaries with extrapolation (zeroth order)
     for ivar in range(0, NUM_VARS) :

@@ -5,20 +5,13 @@ import numpy as np
 import time
 
 # homemade code
-#from evolution_params import *
 from source.uservariables import *
 from source.fourthorderderivatives import *
 from source.tensoralgebra import *
 from source.mymatter import *
 from source.bssn_rhs import *
-
-# fixed value of ghost cells
-num_ghosts = 3
     
 # function that returns the rhs for each of the field vars
-# Assumes 3 ghost cells at either end of the vector of values
-
-# klein gordon eqn
 def get_rhs(t_i, vars_vec, R, N_r, progress_bar, state) :
 
     # Some functions for timing and tracking progress
@@ -258,7 +251,7 @@ def get_rhs(t_i, vars_vec, R, N_r, progress_bar, state) :
                                           dlapsedx[ix], dphidx[ix], dKdx[ix], matter_Si)
         
         # Set the gauge vars rhs
-        eta = 2.0 # 1+log slicing damping coefficient of order 1/M_adm of spacetime
+        eta = 1.0 # 1+log slicing damping coefficient of order 1/M_adm of spacetime
         
         rhs_br[ix]     = 0.75 * rhs_lambdar[ix] - eta * br[ix]
         rhs_shiftr[ix] = br[ix]

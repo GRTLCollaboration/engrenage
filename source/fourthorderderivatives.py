@@ -3,7 +3,7 @@
 import numpy as np
 
 # function that returns the derivatives of a field f in 1D (radial)
-# Assumes num_ghosts ghost cells at either end of the vector of values of length NN
+# Assumes num_ghosts ghost cells at either end of the vector of values
 num_ghosts = 3
 
 # second derivative

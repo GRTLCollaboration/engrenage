@@ -11,10 +11,6 @@ from source.tensoralgebra import *
 from source.mymatter import *
 from source.bssn_rhs import *
 
-# function that returns the rhs for each of the field vars
-# Assumes 3 ghost cells at either end of the vector of values
-num_ghosts = 3
-
 # klein gordon eqn
 def get_diagnostics(solutions_over_time, t, R, N_r) :
 

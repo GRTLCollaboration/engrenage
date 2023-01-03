@@ -25,9 +25,11 @@ parity = [1, 1,           # u, v
           1, 1, 1, 1,     # K, a
           -1, -1, -1, 1]  # lambda^r, shift^r, b^r, lapse
 
+# hard code number of ghosts to 3 here
+num_ghosts = 3
+
 def unpack_vars_vector(vars_vec, N_r) :
 
-    num_ghosts = 3
     domain_length = N_r + 2 * num_ghosts
     
     # Scalar field vars
