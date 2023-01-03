@@ -5,20 +5,29 @@ import numpy as np
 import time
 
 # homemade code
-from myparams import *
+#from evolution_params import *
 from source.uservariables import *
 from source.fourthorderderivatives import *
 from source.tensoralgebra import *
 from source.mymatter import *
 from source.bssn_rhs import *
 
+# fixed value of ghost cells
+num_ghosts = 3
+    
 # function that returns the rhs for each of the field vars
 # Assumes 3 ghost cells at either end of the vector of values
 
 # klein gordon eqn
-def get_rhs(vars_vec, t_i, p, q) :
+def get_rhs(t_i, vars_vec, R, N_r, progress_bar, state) :
 
+    # Some functions for timing and tracking progress
     start = time.time()
+    
+    # Set up grid values
+    dx = R/N_r
+    N = N_r + num_ghosts * 2 
+    r = np.linspace(-(num_ghosts-0.5)*dx, R+(num_ghosts-0.5)*dx, N)
     
     # this is where the rhs will go
     rhs = np.zeros_like(vars_vec) 
@@ -28,13 +37,11 @@ def get_rhs(vars_vec, t_i, p, q) :
     # see uservariables.py for naming conventions
     
     # Unpack variables
-    u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse = unpack_vars_vector(vars_vec)   
+    u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse = unpack_vars_vector(vars_vec, N_r)   
 
     ####################################################################################################
     # enforce that the determinant of \bar gamma_ij is equal to that of flat space in spherical coords
     # (note that trace of \bar A_ij = 0 is enforced dynamically below as in Etienne https://arxiv.org/abs/1712.07658v2)
-
-    shiftrL   = np.zeros_like(shiftr)
     
     # iterate over the grid (vector)
     for ix in range(N) :
@@ -48,71 +55,69 @@ def get_rhs(vars_vec, t_i, p, q) :
         hrr[ix] = (1.0 + hrr[ix])/np.power(determinant,1./3) - 1.0
         htt[ix] = (1.0 + htt[ix])/np.power(determinant,1./3) - 1.0
         hpp[ix] = (1.0 + hpp[ix])/np.power(determinant,1./3) - 1.0
-        
-        # Also just for convenience work out the shift with lowered index
-        shiftrL[ix] = shiftr[ix] * (1.0+hrr[ix]) * np.exp(4.0*phi[ix])
     
     ####################################################################################################
 
     # get the various derivs that we need to evolve things in vector form
+    
+    oneoverdx  = 1.0 / dx
+    oneoverdxsquared = oneoverdx * oneoverdx
+    
     # second derivatives
-    d2udx2     = get_d2fdx2(u)
-    d2phidx2   = get_d2fdx2(phi)
-    d2hrrdx2   = get_d2fdx2(hrr)
-    d2httdx2   = get_d2fdx2(htt)
-    d2hppdx2   = get_d2fdx2(hpp)
-    d2lapsedx2 = get_d2fdx2(lapse)
-    d2shiftrdx2 = get_d2fdx2(shiftr)
+    d2udx2     = get_d2fdx2(u, oneoverdxsquared)
+    d2phidx2   = get_d2fdx2(phi, oneoverdxsquared)
+    d2hrrdx2   = get_d2fdx2(hrr, oneoverdxsquared)
+    d2httdx2   = get_d2fdx2(htt, oneoverdxsquared)
+    d2hppdx2   = get_d2fdx2(hpp, oneoverdxsquared)
+    d2lapsedx2 = get_d2fdx2(lapse, oneoverdxsquared)
+    d2shiftrdx2 = get_d2fdx2(shiftr, oneoverdxsquared)
 
     # first derivatives
-    dudx       = get_dfdx(u)
-    dvdx       = get_dfdx(v)
-    dphidx     = get_dfdx(phi)
-    dhrrdx     = get_dfdx(hrr)
-    dhttdx     = get_dfdx(htt)
-    dhppdx     = get_dfdx(hpp)
-    darrdx     = get_dfdx(arr)
-    dattdx     = get_dfdx(att)
-    dappdx     = get_dfdx(app)
-    dKdx       = get_dfdx(K)
-    dlambdardx = get_dfdx(lambdar)
-    dshiftrdx  = get_dfdx(shiftr)
-    dshiftrLdx = get_dfdx(shiftrL)
-    dbrdx      = get_dfdx(br)
-    dlapsedx   = get_dfdx(lapse)
+    dudx       = get_dfdx(u, oneoverdx)
+    dvdx       = get_dfdx(v, oneoverdx)
+    dphidx     = get_dfdx(phi, oneoverdx)
+    dhrrdx     = get_dfdx(hrr, oneoverdx)
+    dhttdx     = get_dfdx(htt, oneoverdx)
+    dhppdx     = get_dfdx(hpp, oneoverdx)
+    darrdx     = get_dfdx(arr, oneoverdx)
+    dattdx     = get_dfdx(att, oneoverdx)
+    dappdx     = get_dfdx(app, oneoverdx)
+    dKdx       = get_dfdx(K, oneoverdx)
+    dlambdardx = get_dfdx(lambdar, oneoverdx)
+    dshiftrdx  = get_dfdx(shiftr, oneoverdx)
+    dbrdx      = get_dfdx(br, oneoverdx)
+    dlapsedx   = get_dfdx(lapse, oneoverdx)
     
     # first derivatives - advec left and right
-    dudx_advec_L       = get_dfdx_advec_L(u)
-    dvdx_advec_L       = get_dfdx_advec_L(v)
-    dphidx_advec_L     = get_dfdx_advec_L(phi)
-    dhrrdx_advec_L     = get_dfdx_advec_L(hrr)
-    dhttdx_advec_L     = get_dfdx_advec_L(htt)
-    dhppdx_advec_L     = get_dfdx_advec_L(hpp)
-    darrdx_advec_L     = get_dfdx_advec_L(arr)
-    dattdx_advec_L     = get_dfdx_advec_L(att)
-    dappdx_advec_L     = get_dfdx_advec_L(app)
-    dKdx_advec_L       = get_dfdx_advec_L(K)
-    dlambdardx_advec_L = get_dfdx_advec_L(lambdar)
-    dshiftrdx_advec_L  = get_dfdx_advec_L(shiftr)
-    dshiftrLdx_advec_L = get_dfdx_advec_L(shiftrL)
-    dbrdx_advec_L      = get_dfdx_advec_L(br)
-    dlapsedx_advec_L   = get_dfdx_advec_L(lapse)
+    dudx_advec_L       = get_dfdx_advec_L(u, oneoverdx)
+    dvdx_advec_L       = get_dfdx_advec_L(v, oneoverdx)
+    dphidx_advec_L     = get_dfdx_advec_L(phi, oneoverdx)
+    dhrrdx_advec_L     = get_dfdx_advec_L(hrr, oneoverdx)
+    dhttdx_advec_L     = get_dfdx_advec_L(htt, oneoverdx)
+    dhppdx_advec_L     = get_dfdx_advec_L(hpp, oneoverdx)
+    darrdx_advec_L     = get_dfdx_advec_L(arr, oneoverdx)
+    dattdx_advec_L     = get_dfdx_advec_L(att, oneoverdx)
+    dappdx_advec_L     = get_dfdx_advec_L(app, oneoverdx)
+    dKdx_advec_L       = get_dfdx_advec_L(K, oneoverdx)
+    dlambdardx_advec_L = get_dfdx_advec_L(lambdar, oneoverdx)
+    dshiftrdx_advec_L  = get_dfdx_advec_L(shiftr, oneoverdx)
+    dbrdx_advec_L      = get_dfdx_advec_L(br, oneoverdx)
+    dlapsedx_advec_L   = get_dfdx_advec_L(lapse, oneoverdx)
     
-    dudx_advec_R       = get_dfdx_advec_R(u)
-    dvdx_advec_R       = get_dfdx_advec_R(v)
-    dphidx_advec_R     = get_dfdx_advec_R(phi)
-    dhrrdx_advec_R     = get_dfdx_advec_R(hrr)
-    dhttdx_advec_R     = get_dfdx_advec_R(htt)
-    dhppdx_advec_R     = get_dfdx_advec_R(hpp)
-    darrdx_advec_R     = get_dfdx_advec_R(arr)
-    dattdx_advec_R     = get_dfdx_advec_R(att)
-    dappdx_advec_R     = get_dfdx_advec_R(app)
-    dKdx_advec_R       = get_dfdx_advec_R(K)
-    dlambdardx_advec_R = get_dfdx_advec_R(lambdar)
-    dshiftrdx_advec_R  = get_dfdx_advec_R(shiftr)
-    dshiftrLdx_advec_R = get_dfdx_advec_R(shiftrL)
-    dbrdx_advec_R      = get_dfdx_advec_R(br)
-    dlapsedx_advec_R   = get_dfdx_advec_R(lapse)  
+    dudx_advec_R       = get_dfdx_advec_R(u, oneoverdx)
+    dvdx_advec_R       = get_dfdx_advec_R(v, oneoverdx)
+    dphidx_advec_R     = get_dfdx_advec_R(phi, oneoverdx)
+    dhrrdx_advec_R     = get_dfdx_advec_R(hrr, oneoverdx)
+    dhttdx_advec_R     = get_dfdx_advec_R(htt, oneoverdx)
+    dhppdx_advec_R     = get_dfdx_advec_R(hpp, oneoverdx)
+    darrdx_advec_R     = get_dfdx_advec_R(arr, oneoverdx)
+    dattdx_advec_R     = get_dfdx_advec_R(att, oneoverdx)
+    dappdx_advec_R     = get_dfdx_advec_R(app, oneoverdx)
+    dKdx_advec_R       = get_dfdx_advec_R(K, oneoverdx)
+    dlambdardx_advec_R = get_dfdx_advec_R(lambdar, oneoverdx)
+    dshiftrdx_advec_R  = get_dfdx_advec_R(shiftr, oneoverdx)
+    dbrdx_advec_R      = get_dfdx_advec_R(br, oneoverdx)
+    dlapsedx_advec_R   = get_dfdx_advec_R(lapse, oneoverdx)  
     
     ####################################################################################################
     
@@ -234,14 +239,6 @@ def get_rhs(vars_vec, t_i, p, q) :
                                               bar_gamma_UU, em4phi, dphidx[ix], 
                                               K[ix], lapse[ix], dlapsedx[ix], conformal_chris)
 
-        # Add advection
-        rhs_u[ix] += shiftr[ix] * dudx[ix]
-        rhs_v[ix] += shiftr[ix] * dvdx[ix]
-        
-        # USEFUL DEBUG: check flat space result
-        #rhs_u[ix] = v[ix]
-        #rhs_v[ix] = d2udx2[ix]
-
         # Get the bssn rhs - see bssn.py
         rhs_phi[ix]     = get_rhs_phi(lapse[ix], K[ix], bar_div_shift)
         
@@ -260,46 +257,61 @@ def get_rhs(vars_vec, t_i, p, q) :
                                           bar_D_div_shift, bar_gamma_UU, bar_A_UU, lapse[ix],
                                           dlapsedx[ix], dphidx[ix], dKdx[ix], matter_Si)
         
-        # Add advection to time derivatives NEED TO CHECK AND ADD ADVEC STUFF      
-        if (shiftr[ix] < 0) :
-            rhs_phi[ix]     += shiftr[ix] * dphidx[ix]
-            rhs_hrr[ix]     = (rhs_h[i_r][i_r] + shiftr[ix] * dhrrdx[ix] 
-                               + 2.0 * hrr[ix] * dshiftrdx[ix])
-            rhs_htt[ix]     = (rhs_h[i_t][i_t] + shiftr[ix] * dhttdx[ix]
-                               + 2.0 * shiftr[ix] * 1.0/r_here * h[i_t][i_t])
-            rhs_hpp[ix]     = (rhs_h[i_p][i_p] + shiftr[ix] * dhppdx[ix]
-                               + 2.0 * shiftr[ix] * 1.0/r_here * h[i_p][i_p])
-            rhs_K[ix]       += shiftr[ix] * dKdx[ix]
-            rhs_arr[ix]     = (rhs_a[i_r][i_r] + shiftr[ix] * darrdx[ix] 
-                               + 2.0 * arr[ix] * dshiftrdx[ix])
-            rhs_att[ix]     = (rhs_a[i_t][i_t] + shiftr[ix] * dattdx[ix]
-                               + 2.0 * shiftr[ix] * 1.0/r_here * a[i_t][i_t])
-            rhs_app[ix]     = (rhs_a[i_p][i_p] + shiftr[ix] * dappdx[ix]
-                               + 2.0 * shiftr[ix] * 1.0/r_here * a[i_p][i_p])
-            rhs_lambdar[ix] += (shiftr[ix] * dlambdardx[ix] 
-                                - lambdar[ix] * dshiftrdx[ix])
-        else : 
-            rhs_phi[ix]     += shiftr[ix] * dphidx[ix] # ?- shiftr[ix] * dphidx_advec_R[ix]
-            rhs_hrr[ix]     = (rhs_h[i_r][i_r] + shiftr[ix] * dhrrdx[ix] #dhrrdx_advec_R[ix] 
-                               + 2.0 * hrr[ix] * dshiftrdx[ix])
-            rhs_htt[ix]     = (rhs_h[i_t][i_t] + shiftr[ix] * dhttdx[ix]
-                               + 2.0 * shiftr[ix] * 1.0/r_here * h[i_t][i_t])
-            rhs_hpp[ix]     = (rhs_h[i_p][i_p] + shiftr[ix] * dhppdx[ix]
-                               + 2.0 * shiftr[ix] * 1.0/r_here * h[i_p][i_p])
-            rhs_K[ix]       += shiftr[ix] * dKdx[ix]
-            rhs_arr[ix]     = (rhs_a[i_r][i_r] + shiftr[ix] * darrdx[ix] 
-                               + 2.0 * arr[ix] * dshiftrdx[ix])
-            rhs_att[ix]     = (rhs_a[i_t][i_t] + shiftr[ix] * dattdx[ix]
-                               + 2.0 * shiftr[ix] * 1.0/r_here * a[i_t][i_t])
-            rhs_app[ix]     = (rhs_a[i_p][i_p] + shiftr[ix] * dappdx[ix]
-                               + 2.0 * shiftr[ix] * 1.0/r_here * a[i_p][i_p])
-            rhs_lambdar[ix] += (shiftr[ix] * dlambdardx[ix] 
-                                - lambdar[ix] * dshiftrdx[ix])
-            
         # Set the gauge vars rhs
+        eta = 2.0 # 1+log slicing damping coefficient of order 1/M_adm of spacetime
+        
         rhs_br[ix]     = 0.75 * rhs_lambdar[ix] - eta * br[ix]
         rhs_shiftr[ix] = br[ix]
-        rhs_lapse[ix]  = - 2.0 * lapse[ix] * K[ix] + shiftr[ix] * dlapsedx[ix]
+        rhs_lapse[ix]  = - 2.0 * lapse[ix] * K[ix]        
+        
+        # Add advection to time derivatives     
+        if (shiftr[ix] > 0) :
+            rhs_u[ix]       += shiftr[ix] * dudx_advec_R[ix]
+            rhs_v[ix]       += shiftr[ix] * dvdx_advec_R[ix]
+            rhs_phi[ix]     += shiftr[ix] * dphidx_advec_R[ix]
+            rhs_hrr[ix]     = (rhs_h[i_r][i_r] + shiftr[ix] * dhrrdx_advec_R[ix] 
+                               + 2.0 * hrr[ix] * dshiftrdx[ix])
+            rhs_htt[ix]     = (rhs_h[i_t][i_t] + shiftr[ix] * dhttdx_advec_R[ix]
+                               + 2.0 * shiftr[ix] * 1.0/r_here * h[i_t][i_t])
+            rhs_hpp[ix]     = (rhs_h[i_p][i_p] + shiftr[ix] * dhppdx_advec_R[ix]
+                               + 2.0 * shiftr[ix] * 1.0/r_here * h[i_p][i_p])
+            rhs_K[ix]       += shiftr[ix] * dKdx_advec_R[ix]
+            rhs_arr[ix]     = (rhs_a[i_r][i_r] + shiftr[ix] * darrdx_advec_R[ix] 
+                               + 2.0 * arr[ix] * dshiftrdx[ix])
+            rhs_att[ix]     = (rhs_a[i_t][i_t] + shiftr[ix] * dattdx_advec_R[ix]
+                               + 2.0 * shiftr[ix] * 1.0/r_here * a[i_t][i_t])
+            rhs_app[ix]     = (rhs_a[i_p][i_p] + shiftr[ix] * dappdx_advec_R[ix]
+                               + 2.0 * shiftr[ix] * 1.0/r_here * a[i_p][i_p])
+            rhs_lambdar[ix] += (shiftr[ix] * dlambdardx_advec_R[ix] 
+                                - lambdar[ix] * dshiftrdx[ix])
+            rhs_lapse       += shiftr[ix] * dlapsedx_advec_R[ix]
+            # NB don't usually add advection to shift vars
+            # rhs_br[ix]  += 0.0
+            # rhs_shiftr[ix]  += 0.0
+            
+        else : 
+            rhs_u[ix]       += shiftr[ix] * dudx_advec_L[ix]
+            rhs_v[ix]       += shiftr[ix] * dvdx_advec_L[ix]
+            rhs_phi[ix]     += shiftr[ix] * dphidx_advec_L[ix]
+            rhs_hrr[ix]     = (rhs_h[i_r][i_r] + shiftr[ix] * dhrrdx_advec_L[ix]
+                               + 2.0 * hrr[ix] * dshiftrdx[ix])
+            rhs_htt[ix]     = (rhs_h[i_t][i_t] + shiftr[ix] * dhttdx_advec_L[ix]
+                               + 2.0 * shiftr[ix] * 1.0/r_here * h[i_t][i_t])
+            rhs_hpp[ix]     = (rhs_h[i_p][i_p] + shiftr[ix] * dhppdx_advec_L[ix]
+                               + 2.0 * shiftr[ix] * 1.0/r_here * h[i_p][i_p])
+            rhs_K[ix]       += shiftr[ix] * dKdx_advec_L[ix]
+            rhs_arr[ix]     = (rhs_a[i_r][i_r] + shiftr[ix] * darrdx_advec_L[ix] 
+                               + 2.0 * arr[ix] * dshiftrdx[ix])
+            rhs_att[ix]     = (rhs_a[i_t][i_t] + shiftr[ix] * dattdx_advec_L[ix]
+                               + 2.0 * shiftr[ix] * 1.0/r_here * a[i_t][i_t])
+            rhs_app[ix]     = (rhs_a[i_p][i_p] + shiftr[ix] * dappdx_advec_L[ix]
+                               + 2.0 * shiftr[ix] * 1.0/r_here * a[i_p][i_p])
+            rhs_lambdar[ix] += (shiftr[ix] * dlambdardx_advec_L[ix] 
+                                - lambdar[ix] * dshiftrdx[ix])
+            rhs_lapse       += shiftr[ix] * dlapsedx_advec_L[ix]
+            # NB don't usually add advection to shift
+            # rhs_br[ix]  += 0.0
+            # rhs_shiftr[ix]  += 0.0
         
     # end of rhs iteration over grid points   
     ####################################################################################################        
@@ -331,10 +343,13 @@ def get_rhs(vars_vec, t_i, p, q) :
     #################################################################################################### 
             
     # finally add Kreiss Oliger dissipation
+    sigma = 1.0 # kreiss-oliger damping coefficient
+    
     diss = np.zeros_like(vars_vec) 
     for ivar in range(0, NUM_VARS) :
-        ivar_values = np.array(vars_vec[(ivar-1)*N:ivar*N])
-        diss[(ivar-1)*N:ivar*N] = get_dissipation(ivar_values)
+        ivar_values = vars_vec[(ivar)*N:(ivar+1)*N]
+        ivar_diss = get_dissipation(ivar_values, oneoverdx, sigma)
+        diss[(ivar)*N:(ivar+1)*N] = ivar_diss
     rhs += diss
     
     #################################################################################################### 
@@ -356,9 +371,22 @@ def get_rhs(vars_vec, t_i, p, q) :
                    
     #################################################################################################### 
     
-    #print("time at t= ", t_i, " , ", rhs_u, rhs_v)
-    
+    # Some code for checking timing and progress output
     end = time.time()
     #print("time at t= ", t_i, " is, ", end-start)
     
+    # state is a list containing last updated time t:
+    # state = [last_t, dt for progress bar]
+    # its values can be carried between function calls throughout the ODE integration
+    last_t, deltat = state
+    
+    # call update(n) here where n = (t - last_t) / dt
+    n = int((t_i - last_t)/deltat)
+    progress_bar.update(n)
+    # we need this to take into account that n is a rounded number:
+    state[0] = last_t + deltat * n
+        
+    ####################################################################################################
+    
+    #Finally return the rhs
     return rhs

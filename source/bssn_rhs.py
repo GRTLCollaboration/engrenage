@@ -3,7 +3,6 @@
 # see also Baumgarte https://arxiv.org/abs/1211.6632 for the eqns with matter
 
 import numpy as np
-from myparams import *
 from source.tensoralgebra import *
 
 def get_rhs_phi(lapse, K, bar_div_shift) :

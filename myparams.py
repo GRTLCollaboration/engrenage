@@ -5,8 +5,8 @@
 import numpy as np
 
 # Input parameters for grid and evolution here
-N_r = 50 # num points on physical grid
-R = 50.0 # Maximum outer radius
+N_r = 100 # num points on physical grid
+R = 10.0 # Maximum outer radius
 
 # coefficients for bssn and gauge evolution
 eta = 2.0 # 1+log slicing damping coefficient of order 1/M_adm of spacetime

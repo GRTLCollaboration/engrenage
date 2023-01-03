@@ -2,15 +2,24 @@
 
 # set the initial conditions for all the variables
 
-from myparams import *
 from source.uservariables import *
 from source.tensoralgebra import *
 from source.fourthorderderivatives import *
 import numpy as np
 from scipy.interpolate import interp1d
 
+# num ghosts is hardcoded to 3
+num_ghosts = 3
+
 # This routine gives us something where phi = 0 initially but bar_R and lambda are non trivial
-def get_test_vars_values_1() :
+def get_test_vars_values_1(R, N_r) :
+    
+    # Set up grid values
+    dx = R/N_r
+    N = N_r + num_ghosts * 2 
+    r = np.linspace(-(num_ghosts-0.5)*dx, R+(num_ghosts-0.5)*dx, N)
+    oneoverdx  = 1.0 / dx
+    oneoverdxsquared = oneoverdx * oneoverdx
 
     test_vars_values = np.zeros(NUM_VARS * N)
     
@@ -59,13 +68,13 @@ def get_test_vars_values_1() :
     hrr    = test_vars_values[idx_hrr * N : (idx_hrr + 1) * N]
     htt    = test_vars_values[idx_htt * N : (idx_htt + 1) * N]
     hpp    = test_vars_values[idx_hpp * N : (idx_hpp + 1) * N]
-    dhrrdx     = get_dfdx(hrr)
-    dhttdx     = get_dfdx(htt)
-    dhppdx     = get_dfdx(hpp)
+    dhrrdx     = get_dfdx(hrr, oneoverdx)
+    dhttdx     = get_dfdx(htt, oneoverdx)
+    dhppdx     = get_dfdx(hpp, oneoverdx)
     
     # assign lambdar values
     for ix in range(num_ghosts, N-num_ghosts) :
-
+        
         # position on the grid
         r_here = r[ix]
         
@@ -99,10 +108,17 @@ def get_test_vars_values_1() :
         offset = 5 - 2*count
         test_vars_values[ix] = test_vars_values[ix + offset] * parity[idx_lambdar]
         
-    return test_vars_values
+    return r, test_vars_values
 
 # This routine gives us something where bar_R is trivial but phi is non trivial
-def get_test_vars_values_2() :
+def get_test_vars_values_2(R, N_r) :
+    
+    # Set up grid values
+    dx = R/N_r
+    N = N_r + num_ghosts * 2 
+    r = np.linspace(-(num_ghosts-0.5)*dx, R+(num_ghosts-0.5)*dx, N)
+    oneoverdx  = 1.0 / dx
+    oneoverdxsquared = oneoverdx * oneoverdx
 
     test_vars_values = np.zeros(NUM_VARS * N)
     
@@ -152,9 +168,9 @@ def get_test_vars_values_2() :
     hrr    = test_vars_values[idx_hrr * N : (idx_hrr + 1) * N]
     htt    = test_vars_values[idx_htt * N : (idx_htt + 1) * N]
     hpp    = test_vars_values[idx_hpp * N : (idx_hpp + 1) * N]
-    dhrrdx     = get_dfdx(hrr)
-    dhttdx     = get_dfdx(htt)
-    dhppdx     = get_dfdx(hpp)
+    dhrrdx     = get_dfdx(hrr, oneoverdx)
+    dhttdx     = get_dfdx(htt, oneoverdx)
+    dhppdx     = get_dfdx(hpp, oneoverdx)
     
     # assign lambdar values
     for ix in range(num_ghosts, N-num_ghosts) :
@@ -192,11 +208,17 @@ def get_test_vars_values_2() :
         offset = 5 - 2*count
         test_vars_values[ix] = test_vars_values[ix + offset] * parity[idx_lambdar]
         
-    return test_vars_values
+    return r, test_vars_values
 
 # This routine gives us the Schwazschild metric in ingoing eddington finkelstien coords (t = t_schwarz - (r-r*))
-def get_test_vars_values_bh() :
+def get_test_vars_values_bh(R, N_r) :
 
+    # Set up grid values and params
+    dx = R/N_r
+    N = N_r + num_ghosts * 2 
+    r = np.linspace(-(num_ghosts-0.5)*dx, R+(num_ghosts-0.5)*dx, N)
+    oneoverdx  = 1.0 / dx
+    oneoverdxsquared = oneoverdx * oneoverdx
     GM = 1.0
     
     test_vars_values = np.zeros(NUM_VARS * N)
@@ -267,9 +289,9 @@ def get_test_vars_values_bh() :
     hrr    = test_vars_values[idx_hrr * N : (idx_hrr + 1) * N]
     htt    = test_vars_values[idx_htt * N : (idx_htt + 1) * N]
     hpp    = test_vars_values[idx_hpp * N : (idx_hpp + 1) * N]
-    dhrrdx     = get_dfdx(hrr)
-    dhttdx     = get_dfdx(htt)
-    dhppdx     = get_dfdx(hpp)
+    dhrrdx     = get_dfdx(hrr, oneoverdx)
+    dhttdx     = get_dfdx(htt, oneoverdx)
+    dhppdx     = get_dfdx(hpp, oneoverdx)
     
     # assign lambdar values
     for ix in range(num_ghosts, N-num_ghosts) :
@@ -307,4 +329,4 @@ def get_test_vars_values_bh() :
         offset = 5 - 2*count
         test_vars_values[ix] = test_vars_values[ix + offset] * parity[idx_lambdar]
         
-    return test_vars_values
+    return r, test_vars_values

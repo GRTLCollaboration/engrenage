@@ -1,7 +1,6 @@
 #tensoralgebra.py
 
 import numpy as np
-from myparams import *
 
 # The flat spherical coordinate quantities as in arXiv:1211.6632
 # Coordinate indices - r theta and phi
@@ -23,6 +22,7 @@ four_thirds = 4.0/3.0
 
 # Assume 3 spatial dimensions and set up structures for tensors
 SPACEDIM = 3
+eight_pi_G = 8.0 * np.pi * 1.0 # Newtons constant, we take G=c=1
 rank_1_spatial_tensor = np.zeros(SPACEDIM)
 rank_2_spatial_tensor = np.array([rank_1_spatial_tensor, rank_1_spatial_tensor, rank_1_spatial_tensor])
 rank_3_spatial_tensor = np.array([rank_2_spatial_tensor, rank_2_spatial_tensor, rank_2_spatial_tensor])

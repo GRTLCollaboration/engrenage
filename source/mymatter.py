@@ -3,8 +3,10 @@
 # this assumes spherical symmetry
 
 import numpy as np
-from myparams import *
 from source.tensoralgebra import *
+
+# params for matter
+scalar_mu = 1.0 # this is an inverse length scale related to the scalar compton wavelength
 
 def get_matter_rhs(u, v, dudr, d2udr2, bar_gamma_UU, em4phi, 
                    dphidr, K, lapse, dlapsedr, conformal_chris) :

@@ -5,7 +5,6 @@ import numpy as np
 import time
 
 # homemade code
-from myparams import *
 from source.uservariables import *
 from source.fourthorderderivatives import *
 from source.tensoralgebra import *
@@ -14,11 +13,19 @@ from source.bssn_rhs import *
 
 # function that returns the rhs for each of the field vars
 # Assumes 3 ghost cells at either end of the vector of values
+num_ghosts = 3
 
 # klein gordon eqn
-def get_diagnostics(solutions_over_time, t) :
+def get_diagnostics(solutions_over_time, t, R, N_r) :
 
     start = time.time()
+    
+    # Set up grid values
+    dx = R/N_r
+    N = N_r + num_ghosts * 2 
+    r = np.linspace(-(num_ghosts-0.5)*dx, R+(num_ghosts-0.5)*dx, N)
+    oneoverdx  = 1.0 / dx
+    oneoverdxsquared = oneoverdx * oneoverdx
     
     Ham = []
     num_times = int(np.size(solutions_over_time) / (NUM_VARS * N))
@@ -34,30 +41,30 @@ def get_diagnostics(solutions_over_time, t) :
             solution = solutions_over_time[i]
 
         # Unpack variables
-        u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse = unpack_vars_vector(solution)
+        u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse = unpack_vars_vector(solution, N_r)
         
         ################################################################################################
 
         # get the various derivs that we need to evolve things in vector form
         # second derivatives
-        d2udx2     = get_d2fdx2(u)
-        d2phidx2   = get_d2fdx2(phi)
-        d2hrrdx2   = get_d2fdx2(hrr)
-        d2httdx2   = get_d2fdx2(htt)
-        d2hppdx2   = get_d2fdx2(hpp)
+        d2udx2     = get_d2fdx2(u, oneoverdxsquared)
+        d2phidx2   = get_d2fdx2(phi, oneoverdxsquared)
+        d2hrrdx2   = get_d2fdx2(hrr, oneoverdxsquared)
+        d2httdx2   = get_d2fdx2(htt, oneoverdxsquared)
+        d2hppdx2   = get_d2fdx2(hpp, oneoverdxsquared)
 
         # first derivatives
-        dudx       = get_dfdx(u)
-        dvdx       = get_dfdx(v)
-        dphidx     = get_dfdx(phi)
-        dhrrdx     = get_dfdx(hrr)
-        dhttdx     = get_dfdx(htt)
-        dhppdx     = get_dfdx(hpp)
-        darrdx     = get_dfdx(arr)
-        dattdx     = get_dfdx(att)
-        dappdx     = get_dfdx(app)
-        dKdx       = get_dfdx(K)
-        dlambdardx = get_dfdx(lambdar)
+        dudx       = get_dfdx(u, oneoverdx)
+        dvdx       = get_dfdx(v, oneoverdx)
+        dphidx     = get_dfdx(phi, oneoverdx)
+        dhrrdx     = get_dfdx(hrr, oneoverdx)
+        dhttdx     = get_dfdx(htt, oneoverdx)
+        dhppdx     = get_dfdx(hpp, oneoverdx)
+        darrdx     = get_dfdx(arr, oneoverdx)
+        dattdx     = get_dfdx(att, oneoverdx)
+        dappdx     = get_dfdx(app, oneoverdx)
+        dKdx       = get_dfdx(K, oneoverdx)
+        dlambdardx = get_dfdx(lambdar, oneoverdx)
     
         #################################################################################################
     
@@ -154,4 +161,4 @@ def get_diagnostics(solutions_over_time, t) :
     end = time.time()
     #print("time at t= ", t_i, " is, ", end-start)
     
-    return Ham
+    return r, Ham

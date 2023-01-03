@@ -1,7 +1,5 @@
 #uservariables.py
 
-from myparams import *
-
 # This file provides the list of (rescaled) variables to be evolved and
 # assigns each one an index and its parity
 
@@ -27,9 +25,10 @@ parity = [1, 1,           # u, v
           1, 1, 1, 1,     # K, a
           -1, -1, -1, 1]  # lambda^r, shift^r, b^r, lapse
 
-def unpack_vars_vector(vars_vec) :
+def unpack_vars_vector(vars_vec, N_r) :
 
-    domain_length = N
+    num_ghosts = 3
+    domain_length = N_r + 2 * num_ghosts
     
     # Scalar field vars
     u    = vars_vec[idx_u * domain_length : (idx_u + 1) * domain_length]

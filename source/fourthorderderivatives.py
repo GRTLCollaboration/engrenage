@@ -1,83 +1,70 @@
 #fourthorderderivatives.py
 
 import numpy as np
-from myparams import *
 
 # function that returns the derivatives of a field f in 1D (radial)
 # Assumes num_ghosts ghost cells at either end of the vector of values of length NN
+num_ghosts = 3
 
 # second derivative
+d2dx2_stencil = np.array([-1., +16., -30., +16., -1.0]) / 12.0
 
-d2dx2_stencil = oneoverdxsquared * np.array([-1., +16., -30., +16., -1.0]) / 12.0
-
-def get_d2fdx2(f) :
+def get_d2fdx2(f, oneoverdxsquared) :
     # Convolve with the stencil; mode='same' will give result of size of f
     f_xx = np.convolve(f, d2dx2_stencil, mode='same')
     # Clear out the ghost zones
     f_xx[0:num_ghosts] = 0.
     f_xx[-num_ghosts:] = 0.
 
-    return f_xx
-
-
-ddx_stencil = oneoverdx * np.array([-1., +8., 0., -8., +1.]) / 12.0
+    return oneoverdxsquared * f_xx
 
 # first derivative
-def get_dfdx(f) :
+# Note that convolution inverts the stencils so it is the opposite of the order here:
+# https://web.media.mit.edu/~crtaylor/calculator.html
+ddx_stencil = np.array([-1., +8., 0., -8., +1.]) / 12.0
+
+def get_dfdx(f, oneoverdx) :
     # Convolve with the stencil; mode='same' will give result of size of f
     f_x = np.convolve(f, ddx_stencil, mode='same')
     # Clear out the ghost zones
     f_x[0:num_ghosts] = 0.
     f_x[-num_ghosts:] = 0.
         
-    return f_x
+    return oneoverdx * f_x
 
-ddx_stencil_left  = oneoverdx * np.array([-1., +6., -18., +10.,  +3.,  0.,  0.]) / 12.0
-ddx_stencil_right = oneoverdx * np.array([ 0.,  0.,  -3., -10., +18., -6., +1.]) / 12.0
+# advective derivatives
+# Note that convolution inverts the stencils so these are the opposite of the order here:
+# https://web.media.mit.edu/~crtaylor/calculator.html
+ddx_stencil_left  = np.array([ 0., 0., +3., +10.,  -18.,  +6.,  -1.]) / 12.0
+ddx_stencil_right = np.array([ +1.,  -6.,  +18., -10., -3., 0., 0.]) / 12.0
 
-# advective derivative
-def get_dfdx_advec_L(f) :
-    f_x = np.convolve(f, ddx_stencil_left, mode='same')       
+def get_dfdx_advec_L(f, oneoverdx) :
+    f_xL = np.convolve(f, ddx_stencil_left, mode='same')       
         
     # Clear out the ghost zones
-    f_x[0:num_ghosts] = 0.
-    f_x[-num_ghosts:] = 0.
+    f_xL[0:num_ghosts] = 0.
+    f_xL[-num_ghosts:] = 0.
         
-    return f_x
+    return oneoverdx * f_xL
 
-def get_dfdx_advec_R(f) :
-    f_x = np.convolve(f, ddx_stencil_right, mode='same')        
+def get_dfdx_advec_R(f, oneoverdx) :
+    f_xR = np.convolve(f, ddx_stencil_right, mode='same')        
         
     # Clear out the ghost zones
-    f_x[0:num_ghosts] = 0.
-    f_x[-num_ghosts:] = 0.
+    f_xR[0:num_ghosts] = 0.
+    f_xR[-num_ghosts:] = 0.
         
-    return f_x
+    return oneoverdx * f_xR
 
 # 2N = 6 Kreiss Oliger dissipation
-def get_dissipation(f) :
-    diss_x = np.zeros_like(f)
-    NN = np.size(f)
-    for i, f_i in enumerate(f) :
+diss_stencil = np.array([+1., -6., +15., -20., +15., -6., +1.]) / 64.0
 
-        if (i > (num_ghosts-1) and i < NN-num_ghosts) :
+def get_dissipation(f, oneoverdx, sigma) :
+    diss_x = np.convolve(f, diss_stencil, mode='same')  
         
-            # indices of neighbouring points
-            i_m3 = i-3
-            i_m2 = i-2
-            i_m1 = i-1
-            i_p1 = i+1
-            i_p2 = i+2
-            i_p3 = i+3
-            
-            diss_x[i] = sigma * 1./64.0 * oneoverdx * ( 
-                                              + 1.0  * f[i_m3]
-                                              - 6.0  * f[i_m2] 
-                                              + 15.0 * f[i_m1] 
-                                              - 20.0 * f[i]
-                                              + 15.0 * f[i_p1]
-                                              - 6.0  * f[i_p2]
-                                              + 1.0  * f[i_p3]  )
+    # Clear out the ghost zones
+    diss_x[0:num_ghosts] = 0.
+    diss_x[-num_ghosts:] = 0.
         
-    return diss_x
+    return oneoverdx * sigma * diss_x
 
