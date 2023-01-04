@@ -125,9 +125,9 @@ def get_diagnostics(solutions_over_time, t, R, N_r) :
         
             # Matter sources
             matter_rho            = get_rho( u[ix], dudx[ix], v[ix], bar_gamma_UU, em4phi )
-            matter_Si             = get_Si(  u[ix], dudx[ix], v[ix], bar_gamma_UU, em4phi )
-            matter_S, matter_Sij  = get_Sij( u[ix], dudx[ix], v[ix], bar_gamma_UU, em4phi,
-                                             bar_gamma_LL)
+            matter_Si             = get_Si(  u[ix], dudx[ix], v[ix])
+            matter_S, matter_rSij  = get_rSij( u[ix], dudx[ix], v[ix], r_gamma_UU, em4phi,
+                                               r_gamma_LL)
 
             # End of: Calculate some useful quantities, now start diagnostic
             #################################################################
@@ -142,8 +142,6 @@ def get_diagnostics(solutions_over_time, t, R, N_r) :
                                       + 8.0 * bar_gamma_UU[i_p][i_p] * flat_chris[i_r][i_p][i_p] * dphidx[ix]
                                       + 8.0 * Delta_U[i_r] * dphidx[ix])
                          - 2.0 * eight_pi_G * matter_rho )
-            
-            #print("bar_R is ", bar_R)
 
         # end of iteration over grid 
         ###################################   

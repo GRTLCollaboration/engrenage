@@ -33,27 +33,28 @@ def get_rho(u, dudr, v, bar_gamma_UU, em4phi) :
 
     return rho
 
-def get_Si(u, dudr, v, bar_gamma_UU, em4phi) :
+def get_Si(u, dudr, v) :
     S_i = np.zeros_like(rank_1_spatial_tensor)
     
     S_i[i_r] = - v * dudr
     
     return S_i
 
-def get_Sij(u, dudr, v, bar_gamma_UU, em4phi, bar_gamma_LL) :
-    S_ij = np.zeros_like(rank_2_spatial_tensor)
+# Get rescaled Sij value
+def get_rSij(u, dudr, v, r_gamma_UU, em4phi, r_gamma_LL) :
+    rS_ij = np.zeros_like(rank_2_spatial_tensor)
 
     # The potential V(u) = 1/2 mu^2 u^2
     V_u = 0.5 * scalar_mu * scalar_mu * u * u
     
     # Useful quantity Vt
-    Vt = - v*v + em4phi * bar_gamma_UU[i_r][i_r] * (dudr * dudr)
+    Vt = - v*v + em4phi * r_gamma_UU[i_r][i_r] * (dudr * dudr)
     for i in range(0, SPACEDIM):    
-        S_ij[i][i] = - (0.5 * Vt  + V_u) * bar_gamma_LL[i][i] / em4phi + delta[i][i_r] * dudr * dudr
+        rS_ij[i][i] = - (0.5 * Vt  + V_u) * r_gamma_LL[i][i] / em4phi + delta[i][i_r] * dudr * dudr
     
     # The trace of S_ij
     S = 0.0
     for i in range(0, SPACEDIM): 
         for j in range(0, SPACEDIM):
-            S += S_ij[i][j] * bar_gamma_UU[i][j] * em4phi
-    return S, S_ij
+            S += rS_ij[i][j] * r_gamma_UU[i][j] * em4phi
+    return S, rS_ij

@@ -46,12 +46,16 @@ def get_initial_vars_values(R, N_r) :
         initial_vars_values[ix + idx_hpp * N]      = em4phi * gpp_over_r2sintheta - 1.0
         initial_vars_values[ix + idx_lapse * N] = np.exp(-4.0*phi_here) # pre collapse the lapse  
         
-    # overwrite outer boundaries with extrapolation (zeroth order)
+    # overwrite outer boundaries with extrapolation (order specified in uservariables)
     for ivar in range(0, NUM_VARS) :
         boundary_cells = np.array([(ivar + 1)*N-3, (ivar + 1)*N-2, (ivar + 1)*N-1])
+        var_asymptotic_power = asymptotic_power[ivar]
         for count, ix in enumerate(boundary_cells) :
             offset = -1 - count
-            initial_vars_values[ix]    = initial_vars_values[ix + offset]
+            initial_vars_values[ix]    = initial_vars_values[ix + offset] * (r[N - 3 + count] / r[N - 4])**var_asymptotic_power
+            if (ivar == idx_lapse) :
+                initial_vars_values[ix]    = 1.0 - ((1.0 - initial_vars_values[ix + offset]) 
+                                                    * (r[N - 3 + count] / r[N - 4])**var_asymptotic_power)
 
     # overwrite inner cells using parity under r -> - r
     for ivar in range(0, NUM_VARS) :
@@ -98,7 +102,18 @@ def get_initial_vars_values(R, N_r) :
     boundary_cells = np.array([(idx_lambdar + 1)*N-3, (idx_lambdar + 1)*N-2, (idx_lambdar + 1)*N-1])
     for count, ix in enumerate(boundary_cells) :
         offset = -1 - count
-        initial_vars_values[ix]    = initial_vars_values[ix + offset]
+        initial_vars_values[ix]    = initial_vars_values[ix + offset] * ((r[N - 3 + count] / r[N - 4]) 
+                                                                         ** asymptotic_power[idx_lambdar])
+
+            # overwrite outer boundaries with extrapolation (order specified in uservariables)
+    for ivar in range(0, NUM_VARS) :
+        boundary_cells = np.array([(ivar + 1)*N-3, (ivar + 1)*N-2, (ivar + 1)*N-1])
+        var_asymptotic_power = asymptotic_power[ivar]
+        for count, ix in enumerate(boundary_cells) :
+            offset = -1 - count
+            rhs[ix]    = rhs[ix + offset] * (r[N - 4 + count] / r[N - 4])**var_asymptotic_power
+            if (ivar == idx_lapse) :
+                rhs[ix]    = 1 - ((1-rhs[ix + offset]) * (r[N - 4 + count] / r[N - 4])**var_asymptotic_power)
         
     boundary_cells = np.array([(idx_lambdar)*N, (idx_lambdar)*N+1, (idx_lambdar)*N+2])
     for count, ix in enumerate(boundary_cells) :

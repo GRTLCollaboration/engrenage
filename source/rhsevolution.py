@@ -45,6 +45,10 @@ def get_rhs(t_i, vars_vec, R, N_r, progress_bar, state) :
         h[i_t][i_t] = htt[ix]
         h[i_p][i_p] = hpp[ix]
         determinant = get_rescaled_determinant_gamma(h)
+        
+        #if(abs(determinant - 1.0) > 1e-5) :
+        #    print("det is", determinant, " at ", r[ix])
+        
         hrr[ix] = (1.0 + hrr[ix])/np.power(determinant,1./3) - 1.0
         htt[ix] = (1.0 + htt[ix])/np.power(determinant,1./3) - 1.0
         hpp[ix] = (1.0 + hpp[ix])/np.power(determinant,1./3) - 1.0
@@ -191,38 +195,12 @@ def get_rhs(t_i, vars_vec, R, N_r, progress_bar, state) :
         # This is the conformal divergence of the shift \bar D_i \beta^i
         # Use the fact that the conformal metric determinant is \hat \gamma = r^4 sin2theta
         bar_div_shift =  (dshiftrdx[ix] + 2.0 * shiftr[ix] / r_here)
-               
-        # This is \bar D^r (\bar D_i \beta^i) note the raised index of r
-        bar_D_div_shift = bar_gamma_UU[i_r][i_r] * (d2shiftrdx2[ix] 
-                                                    + 2.0 / r_here * dshiftrdx[ix] 
-                                                    - 2.0 / r_here / r_here * shiftr[ix])
-        
-        # Same for \bar D^k \bar D_k lapse
-        bar_D2_lapse = (bar_gamma_UU[i_r][i_r] * (d2lapsedx2[ix]
-                                                 - conformal_chris[i_r][i_r][i_r] * dlapsedx[ix])
-                        - bar_gamma_UU[i_t][i_t] * conformal_chris[i_r][i_t][i_t] * dlapsedx[ix]
-                        - bar_gamma_UU[i_p][i_p] * conformal_chris[i_r][i_p][i_p] * dlapsedx[ix] )
-        
-        # This is \hat\gamma_jk \hat D_i shift^k (note Etienne paper typo - this is not \hat D_i \beta_j)
-        hat_D_shift = np.zeros_like(rank_2_spatial_tensor)
-        hat_D_shift[i_r][i_r] = dshiftrdx[ix]
-        hat_D_shift[i_t][i_t] = r_here * r_here * flat_chris[i_t][i_t][i_r] * shiftr[ix]
-        hat_D_shift[i_p][i_p] = r_here * r_here * sin2theta * flat_chris[i_p][i_p][i_r] * shiftr[ix]
-        
-        # \bar \gamma^ij \hat D_i \hat D_j shift^r
-        hat_D2_shift = (  bar_gamma_UU[i_r][i_r] * d2shiftrdx2[ix] 
-                        - bar_gamma_UU[i_t][i_t] * flat_chris[i_r][i_t][i_t] * dshiftrdx[ix]
-                        - bar_gamma_UU[i_p][i_p] * flat_chris[i_r][i_p][i_p] * dshiftrdx[ix]
-                        + ( bar_gamma_UU[i_t][i_t] * flat_chris[i_r][i_t][i_t] 
-                                                   * flat_chris[i_t][i_r][i_t]  * shiftr[ix])
-                        + ( bar_gamma_UU[i_p][i_p] * flat_chris[i_r][i_p][i_p] 
-                                                   * flat_chris[i_p][i_r][i_p]  * shiftr[ix]) )
         
         # Matter sources
-        matter_rho            = get_rho( u[ix], dudx[ix], v[ix], bar_gamma_UU, em4phi )
-        matter_Si             = get_Si(  u[ix], dudx[ix], v[ix], bar_gamma_UU, em4phi )
-        matter_S, matter_Sij  = get_Sij( u[ix], dudx[ix], v[ix], bar_gamma_UU, em4phi,
-                                             bar_gamma_LL)
+        matter_rho             = get_rho( u[ix], dudx[ix], v[ix], bar_gamma_UU, em4phi )
+        matter_Si              = get_Si(  u[ix], dudx[ix], v[ix])
+        matter_S, matter_rSij  = get_rSij( u[ix], dudx[ix], v[ix], r_gamma_UU, em4phi,
+                                             r_gamma_LL)
 
         # End of: Calculate some useful quantities, now start RHS
         #########################################################
@@ -235,24 +213,24 @@ def get_rhs(t_i, vars_vec, R, N_r, progress_bar, state) :
         # Get the bssn rhs - see bssn.py
         rhs_phi[ix]     = get_rhs_phi(lapse[ix], K[ix], bar_div_shift)
         
-        rhs_h           = get_rhs_h(r_here, r_gamma_LL, lapse[ix], traceA, bar_div_shift, 
-                                    hat_D_shift, a)
+        rhs_h           = get_rhs_h(r_here, r_gamma_LL, lapse[ix], traceA, dshiftrdx[ix], shiftr[ix], 
+                                    bar_div_shift, flat_chris, a)
         
-        rhs_K[ix]       = get_rhs_K(lapse[ix], K[ix], Asquared, em4phi, bar_D2_lapse, 
-                                    dlapsedx[ix], dphidx[ix], bar_gamma_UU, matter_rho, matter_S)   
+        rhs_K[ix]       = get_rhs_K(lapse[ix], K[ix], Asquared, em4phi, d2lapsedx2[ix], dlapsedx[ix], 
+                                    conformal_chris, dphidx[ix], bar_gamma_UU, matter_rho, matter_S)
         
-        rhs_a           = get_rhs_a(a, bar_div_shift, lapse[ix], K[ix], em4phi, bar_Rij,
-                                    r_here, Delta_ULL, bar_gamma_UU, bar_A_UU, bar_A_LL,
+        rhs_a           = get_rhs_a(r_here, a, bar_div_shift, lapse[ix], K[ix], em4phi, bar_Rij,
+                                    conformal_chris, Delta_ULL, r_gamma_UU, bar_gamma_UU,
                                     d2phidx2[ix], dphidx[ix], d2lapsedx2[ix], dlapsedx[ix], 
-                                    h, dhdr, d2hdr2, matter_Sij)
+                                    h, dhdr, d2hdr2, matter_rSij)
         
-        rhs_lambdar[ix] = get_rhs_lambdar(hat_D2_shift, Delta_U, Delta_ULL, bar_div_shift, 
-                                          bar_D_div_shift, bar_gamma_UU, bar_A_UU, lapse[ix],
+        rhs_lambdar[ix] = get_rhs_lambdar(r_here, d2shiftrdx2[ix], dshiftrdx[ix], shiftr[ix], 
+                                          Delta_U, Delta_ULL, bar_div_shift, flat_chris,
+                                          bar_gamma_UU, bar_A_UU, lapse[ix],
                                           dlapsedx[ix], dphidx[ix], dKdx[ix], matter_Si)
         
         # Set the gauge vars rhs
-        eta = 1.0 # 1+log slicing damping coefficient of order 1/M_adm of spacetime
-        
+        eta = 1.0 # 1+log slicing damping coefficient of order 1/M_adm of spacetime        
         rhs_br[ix]     = 0.75 * rhs_lambdar[ix] - eta * br[ix]
         rhs_shiftr[ix] = br[ix]
         rhs_lapse[ix]  = - 2.0 * lapse[ix] * K[ix]        
@@ -277,9 +255,9 @@ def get_rhs(t_i, vars_vec, R, N_r, progress_bar, state) :
                                + 2.0 * shiftr[ix] * 1.0/r_here * a[i_p][i_p])
             rhs_lambdar[ix] += (shiftr[ix] * dlambdardx_advec_R[ix] 
                                 - lambdar[ix] * dshiftrdx[ix])
-            rhs_lapse       += shiftr[ix] * dlapsedx_advec_R[ix]
-            # NB don't usually add advection to shift vars
-            # rhs_br[ix]  += 0.0
+            # NB optional to add advection to lapse and shift vars
+            # rhs_lapse       += shiftr[ix] * dlapsedx_advec_R[ix]
+            # rhs_br[ix]      += 0.0
             # rhs_shiftr[ix]  += 0.0
             
         else : 
@@ -301,9 +279,9 @@ def get_rhs(t_i, vars_vec, R, N_r, progress_bar, state) :
                                + 2.0 * shiftr[ix] * 1.0/r_here * a[i_p][i_p])
             rhs_lambdar[ix] += (shiftr[ix] * dlambdardx_advec_L[ix] 
                                 - lambdar[ix] * dshiftrdx[ix])
-            rhs_lapse       += shiftr[ix] * dlapsedx_advec_L[ix]
-            # NB don't usually add advection to shift
-            # rhs_br[ix]  += 0.0
+            # NB optional to add advection to lapse and shift vars
+            # rhs_lapse       += shiftr[ix] * dlapsedx_advec_L[ix]            
+            # rhs_br[ix]      += 0.0
             # rhs_shiftr[ix]  += 0.0
         
     # end of rhs iteration over grid points   
@@ -347,12 +325,17 @@ def get_rhs(t_i, vars_vec, R, N_r, progress_bar, state) :
     
     #################################################################################################### 
         
-    # overwrite outer boundaries with extrapolation (zeroth order)
+    # overwrite outer boundaries with extrapolation (order specified in uservariables)
     for ivar in range(0, NUM_VARS) :
         boundary_cells = np.array([(ivar + 1)*N-3, (ivar + 1)*N-2, (ivar + 1)*N-1])
+        var_asymptotic_power = asymptotic_power[ivar]
         for count, ix in enumerate(boundary_cells) :
             offset = -1 - count
-            rhs[ix]    = rhs[ix + offset]
+            if (ivar == idx_lapse) :
+                rhs[ix]    = 1.0 - ((1.0 - rhs[ix + offset]) * 
+                                    (r[N - 3 + count] / r[N - 4])**var_asymptotic_power)
+            else :
+                rhs[ix]    = rhs[ix + offset] * (r[N - 3 + count] / r[N - 4])**var_asymptotic_power
 
     # overwrite inner cells using parity under r -> - r
     for ivar in range(0, NUM_VARS) :

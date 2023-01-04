@@ -20,10 +20,17 @@ idx_lapse   = 13   # lapse
 
 NUM_VARS = idx_lapse + 1
 
+# parity under r -> -r
 parity = [1, 1,           # u, v
           1, 1, 1, 1,     # phi, h
           1, 1, 1, 1,     # K, a
           -1, -1, -1, 1]  # lambda^r, shift^r, b^r, lapse
+
+# scaling at larger r as power of r, i.e. var ~ r^asymptotic_power
+asymptotic_power =   [0., 0.,                # u, v
+                      -1., -1., -1., -1.,    # phi, h
+                      -2., -2., -2., -2.,    # K, a
+                      -2., -1., -1., 0.]     # lambda^r, shift^r, b^r, lapse
 
 # hard code number of ghosts to 3 here
 num_ghosts = 3
