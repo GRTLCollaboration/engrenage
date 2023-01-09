@@ -51,7 +51,7 @@ def get_rhs_K(lapse, K, Asquared, em4phi, d2lapsedr2, dlapsedr, conformal_chris,
 
     return dKdt
 
-def get_rhs_a(r_here, a, bar_div_shift, lapse, K, em4phi, bar_Rij, conformal_chris,
+def get_rhs_a(r_here, a, bar_div_shift, lapse, K, em4phi, rbar_Rij, conformal_chris,
               Delta_ULL, r_gamma_UU, bar_gamma_UU,
               d2phidr2, dphidr, d2lapsedr2, dlapsedr, h, dhdr, d2hdr2, rSij) : 
     
@@ -70,19 +70,19 @@ def get_rhs_a(r_here, a, bar_div_shift, lapse, K, em4phi, bar_Rij, conformal_chr
                                                          - d2lapsedr2)
     
     # reduced Delta^r_tt and Delta^r_pp
-    r_Delta_rtt = 0.0 #0.5 * bar_gamma_UU[i_r][i_r] * (2.0 * inv_scaling[i_t] * (h[i_r][i_r] - h[i_t][i_t]) - dhdr[i_t][i_t])
+    r_Delta_rrr = Delta_ULL[i_r][i_r][i_r]
+    r_Delta_rtt = 0.5 * bar_gamma_UU[i_r][i_r] * (2.0 * inv_scaling[i_t] * (h[i_r][i_r] - h[i_t][i_t]) - dhdr[i_t][i_t])
     r_Delta_rpp = r_Delta_rtt
     
     # Add the parts related to the flat chris with correct scaling, and the Delta term
+    r_dAdt_TF_part[i_r][i_r] += (2.0 * lapse * dphidr + dlapsedr) * (0.0 + r_Delta_rrr)
     r_dAdt_TF_part[i_t][i_t] = (2.0 * lapse * dphidr + dlapsedr) * (-1./r_here + r_Delta_rtt)
     r_dAdt_TF_part[i_p][i_p] = (2.0 * lapse * dphidr + dlapsedr) * (- sintheta / r_here + r_Delta_rpp)
    
     for i in range(0, SPACEDIM):        
         for j in range(0, SPACEDIM):
-            r_dAdt_TF_part[i][j] += (+ lapse * bar_Rij[i][j] * inv_scaling[i] * inv_scaling[j]
-                                     - lapse * eight_pi_G * rSij[i][j]
-                                     + Delta_ULL[i_r][i][j] * (+ 2.0 * lapse * dphidr 
-                                                                        + dlapsedr) * inv_scaling[i] * inv_scaling[j])
+            r_dAdt_TF_part[i][j] += (+ lapse * rbar_Rij[i][j]
+                                     - lapse * eight_pi_G * rSij[i][j])
     
     r_fullgamma_UU = em4phi * r_gamma_UU    
     trace = get_trace(r_dAdt_TF_part, r_fullgamma_UU)

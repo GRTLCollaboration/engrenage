@@ -222,6 +222,40 @@ def get_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar, dlambardr,
             
     return ricci
 
+# Compute the Ricci tensor
+# See eqn (12) in Baumgarte https://arxiv.org/abs/1211.6632
+def get_reduced_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar, dlambardr, 
+                             Delta_U, Delta_ULL, Delta_LLL, 
+                             r_gamma_UU, r_gamma_LL) :
+
+    ricci = np.zeros_like(rank_2_spatial_tensor)
+    
+    # Get \hat D \Lambda^i
+    hat_D_Lambda = get_hat_D_Lambda(r_here, lambdar, dlambardr)
+    # Get \bar\gamma^kl \hat D_k \hat D_l \bar\gamma_ij
+    hat_D2_bar_gamma = get_hat_D2_bar_gamma(r_here, h, dhdr, d2hdr2, r_gamma_UU)
+    
+    for i in range(0, SPACEDIM):
+        for j in range(0, SPACEDIM):
+            ricci[i][j] += 0.0* -0.5 * hat_D2_bar_gamma[i][j]
+                
+            for k in range(0, SPACEDIM):
+                ricci[i][j] += (   0.5 * (r_gamma_LL[k][i] * hat_D_Lambda[j][k] + 
+                                          r_gamma_LL[k][j] * hat_D_Lambda[i][k])
+                                 + 0.0*0.5 * (Delta_U[k] * Delta_LLL[i][j][k] + 
+                                          Delta_U[k] * Delta_LLL[j][i][k]) )
+                
+#                for l in range(0, SPACEDIM):
+#                    for m in range(0, SPACEDIM): 
+#                        ricci[i][j] += bar_gamma_UU[k][l] * (  Delta_ULL[m][k][i] * 
+#                                                               Delta_LLL[j][m][l]
+#                                                             + Delta_ULL[m][k][j] * 
+#                                                               Delta_LLL[i][m][l]
+#                                                             + Delta_ULL[m][i][k] * 
+#                                                               Delta_LLL[m][j][l] )
+            
+    return ricci
+
 # \hat D_i \Lambda^j
 # See eqn (26) in Baumgarte https://arxiv.org/abs/1211.6632
 def get_hat_D_Lambda(r_here, lambdar, dlambardr) :
@@ -250,7 +284,7 @@ def get_hat_D2_bar_gamma(r_here, h, dhdr, d2hdr2, bar_gamma_UU) :
 
     # Useful quantities
     hat_D_bar_gamma = get_metric_deriv(r_here, h, dhdr)
-    chris = get_flat_spherical_chris(r_here)
+    flat_chris = get_flat_spherical_chris(r_here)
     r2 = r_here * r_here
     r2sin2theta = r2 * sin2theta
     
@@ -268,9 +302,9 @@ def get_hat_D2_bar_gamma(r_here, h, dhdr, d2hdr2, bar_gamma_UU) :
             for k in range(0, SPACEDIM): 
                 for l in range(0, SPACEDIM):  
                     for m in range(0, SPACEDIM): 
-                        hat_D2_bar_gamma[i][j] += - bar_gamma_UU[k][l] * (  hat_D_bar_gamma[m][i][j] * chris[m][l][k]
-                                                                          + hat_D_bar_gamma[l][m][j] * chris[m][i][k]
-                                                                          + hat_D_bar_gamma[l][i][m] * chris[m][j][k] )
+                        hat_D2_bar_gamma[i][j] += - bar_gamma_UU[k][l] * (  hat_D_bar_gamma[m][i][j] * flat_chris[m][l][k]
+                                                                          + hat_D_bar_gamma[l][m][j] * flat_chris[m][i][k]
+                                                                          + hat_D_bar_gamma[l][i][m] * flat_chris[m][j][k] )
                                                                         
                 
     return hat_D2_bar_gamma

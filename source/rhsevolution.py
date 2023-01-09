@@ -188,6 +188,8 @@ def get_rhs(t_i, vars_vec, R, N_r, progress_bar, state) :
         Delta_U, Delta_ULL, Delta_LLL  = get_connection(r_here, bar_gamma_UU, bar_gamma_LL, h, dhdr)
         bar_Rij = get_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar[ix], dlambdardx[ix], 
                                    Delta_U, Delta_ULL, Delta_LLL, bar_gamma_UU, bar_gamma_LL)
+        rbar_Rij = get_reduced_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar[ix], dlambdardx[ix], 
+                                   Delta_U, Delta_ULL, Delta_LLL, r_gamma_UU, r_gamma_LL)        
 
         # \bar \gamma^i_jk
         conformal_chris = get_conformal_chris(Delta_ULL, r_here)
@@ -219,7 +221,7 @@ def get_rhs(t_i, vars_vec, R, N_r, progress_bar, state) :
         rhs_K[ix]       = get_rhs_K(lapse[ix], K[ix], Asquared, em4phi, d2lapsedx2[ix], dlapsedx[ix], 
                                     conformal_chris, dphidx[ix], bar_gamma_UU, matter_rho, matter_S)
         
-        rhs_a           = get_rhs_a(r_here, a, bar_div_shift, lapse[ix], K[ix], em4phi, bar_Rij,
+        rhs_a           = get_rhs_a(r_here, a, bar_div_shift, lapse[ix], K[ix], em4phi, rbar_Rij,
                                     conformal_chris, Delta_ULL, r_gamma_UU, bar_gamma_UU,
                                     d2phidx2[ix], dphidx[ix], d2lapsedx2[ix], dlapsedx[ix], 
                                     h, dhdr, d2hdr2, matter_rSij)
