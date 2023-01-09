@@ -29,8 +29,8 @@ parity = [1, 1,           # u, v
 # scaling at larger r as power of r, i.e. var ~ r^asymptotic_power
 asymptotic_power =   [0., 0.,                # u, v
                       -1., -1., -1., -1.,    # phi, h
-                      -2., -2., -2., -2.,    # K, a
-                      -2., -1., -1., 0.]     # lambda^r, shift^r, b^r, lapse
+                      0., 0., 0., 0., #-2., -2., -2., -2.,    # K, a
+                      0., 0., 0., 0.] #-2., -1., -1., 0.]     # lambda^r, shift^r, b^r, lapse
 
 # hard code number of ghosts to 3 here
 num_ghosts = 3

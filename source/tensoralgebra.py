@@ -230,7 +230,7 @@ def get_hat_D_Lambda(r_here, lambdar, dlambardr) :
     hat_D_Lambda = np.zeros_like(rank_2_spatial_tensor)
     
     # Useful quantities
-    chris = get_flat_spherical_chris(r_here)
+    flat_chris = get_flat_spherical_chris(r_here)
     Lambda = np.zeros_like(rank_1_spatial_tensor)
     Lambda[i_r] = lambdar
 
@@ -238,7 +238,7 @@ def get_hat_D_Lambda(r_here, lambdar, dlambardr) :
     for i in range(0, SPACEDIM):
         for j in range(0, SPACEDIM):  
             for k in range(0, SPACEDIM): 
-                hat_D_Lambda[i][j] += chris[j][i][k] * Lambda[k]
+                hat_D_Lambda[i][j] += flat_chris[j][i][k] * Lambda[k]
                 
     return hat_D_Lambda
 

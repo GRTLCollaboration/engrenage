@@ -13,17 +13,16 @@ def get_rhs_phi(lapse, K, bar_div_shift) :
     
     return dphidt
 
-def get_rhs_h(r_here, r_gamma_LL, lapse, traceA, dshiftrdx, shiftr, bar_div_shift, flat_chris, a) :
+def get_rhs_h(r_gamma_LL, lapse, traceA, dshiftrdx, shiftr, bar_div_shift, flat_chris, a) :
     
     # This is \hat\gamma_jk \hat D_i shift^k (note Etienne paper notation ambiguity - this is not \hat D_i \beta_j)
-    hat_D_shift = np.zeros_like(rank_2_spatial_tensor)
-    hat_D_shift[i_r][i_r] = dshiftrdx
-    hat_D_shift[i_t][i_t] = r_here * r_here * flat_chris[i_t][i_t][i_r] * shiftr
-    hat_D_shift[i_p][i_p] = r_here * r_here * sin2theta * flat_chris[i_p][i_p][i_r] * shiftr
+    rhat_D_shift = np.zeros_like(rank_2_spatial_tensor)
+    rhat_D_shift[i_r][i_r] = dshiftrdx
+    rhat_D_shift[i_t][i_t] = flat_chris[i_t][i_t][i_r] * shiftr
+    rhat_D_shift[i_p][i_p] = flat_chris[i_p][i_p][i_r] * shiftr
 
     # Calculate rhs
     dhdt = np.zeros_like(rank_2_spatial_tensor)
-    inv_scaling = np.array([1.0, 1.0/r_here , 1.0/r_here/sintheta])  
     for i in range(0, SPACEDIM):
         for j in range(0, SPACEDIM):
             
@@ -31,7 +30,7 @@ def get_rhs_h(r_here, r_gamma_LL, lapse, traceA, dshiftrdx, shiftr, bar_div_shif
             # as in Etienne https://arxiv.org/abs/1712.07658v2 eqn (11a)
             # recall that h is the rescaled quantity so we need to scale
             dhdt[i][j] += ( two_thirds * r_gamma_LL[i][j] * (lapse * traceA - bar_div_shift)
-                             + inv_scaling[i] * inv_scaling[j] * (hat_D_shift[i][j] + hat_D_shift[j][i])
+                             + (rhat_D_shift[i][j] + rhat_D_shift[j][i])
                              - 2.0 * lapse * a[i][j])
     
     return dhdt
@@ -70,20 +69,23 @@ def get_rhs_a(r_here, a, bar_div_shift, lapse, K, em4phi, bar_Rij, conformal_chr
                                                          + 4.0 * dlapsedr * dphidr
                                                          - d2lapsedr2)
     
-    # Add the parts related to the flat chris with correct scaling, and the Delta term below
-    r_dAdt_TF_part[i_t][i_t] = - 0.0*(2.0 * lapse * dphidr + dlapsedr) / r_here
-    r_dAdt_TF_part[i_p][i_p] = - 0.0*(2.0 * lapse * dphidr + dlapsedr) * sintheta / r_here
+    # reduced Delta^r_tt and Delta^r_pp
+    r_Delta_rtt = 0.0 #0.5 * bar_gamma_UU[i_r][i_r] * (2.0 * inv_scaling[i_t] * (h[i_r][i_r] - h[i_t][i_t]) - dhdr[i_t][i_t])
+    r_Delta_rpp = r_Delta_rtt
+    
+    # Add the parts related to the flat chris with correct scaling, and the Delta term
+    r_dAdt_TF_part[i_t][i_t] = (2.0 * lapse * dphidr + dlapsedr) * (-1./r_here + r_Delta_rtt)
+    r_dAdt_TF_part[i_p][i_p] = (2.0 * lapse * dphidr + dlapsedr) * (- sintheta / r_here + r_Delta_rpp)
    
     for i in range(0, SPACEDIM):        
         for j in range(0, SPACEDIM):
             r_dAdt_TF_part[i][j] += (+ lapse * bar_Rij[i][j] * inv_scaling[i] * inv_scaling[j]
                                      - lapse * eight_pi_G * rSij[i][j]
-                                     + conformal_chris[i_r][i][j] * (+ 2.0 * lapse * dphidr 
-                                     #+ Delta_ULL[i_r][i][j] * (+ 2.0 * lapse * dphidr 
+                                     + Delta_ULL[i_r][i][j] * (+ 2.0 * lapse * dphidr 
                                                                         + dlapsedr) * inv_scaling[i] * inv_scaling[j])
     
-    r_gamma_UU = em4phi * r_gamma_UU    
-    trace = get_trace(r_dAdt_TF_part, r_gamma_UU)
+    r_fullgamma_UU = em4phi * r_gamma_UU    
+    trace = get_trace(r_dAdt_TF_part, r_fullgamma_UU)
 
     # Calculate rhs     
     dadt = np.zeros_like(rank_2_spatial_tensor)    
@@ -102,7 +104,7 @@ def get_rhs_lambdar(r_here, d2shiftrdr2, dshiftrdr, shiftr, Delta_U, Delta_ULL, 
     
     
     # \bar \gamma^ij \hat D_i \hat D_j shift^r
-    hat_D2_shiftr = (      bar_gamma_UU[i_r][i_r] * d2shiftrdr2
+    hat_D2_shiftr = (     bar_gamma_UU[i_r][i_r] * d2shiftrdr2
                         - bar_gamma_UU[i_t][i_t] * flat_chris[i_r][i_t][i_t] * dshiftrdr
                         - bar_gamma_UU[i_p][i_p] * flat_chris[i_r][i_p][i_p] * dshiftrdr
                         + ( bar_gamma_UU[i_t][i_t] * flat_chris[i_r][i_t][i_t] 

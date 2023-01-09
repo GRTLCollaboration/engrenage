@@ -213,7 +213,7 @@ def get_rhs(t_i, vars_vec, R, N_r, progress_bar, state) :
         # Get the bssn rhs - see bssn.py
         rhs_phi[ix]     = get_rhs_phi(lapse[ix], K[ix], bar_div_shift)
         
-        rhs_h           = get_rhs_h(r_here, r_gamma_LL, lapse[ix], traceA, dshiftrdx[ix], shiftr[ix], 
+        rhs_h           = get_rhs_h(r_gamma_LL, lapse[ix], traceA, dshiftrdx[ix], shiftr[ix], 
                                     bar_div_shift, flat_chris, a)
         
         rhs_K[ix]       = get_rhs_K(lapse[ix], K[ix], Asquared, em4phi, d2lapsedx2[ix], dlapsedx[ix], 
