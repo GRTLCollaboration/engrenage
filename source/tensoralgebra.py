@@ -54,6 +54,30 @@ def get_flat_spherical_chris(r_here) :
     
     return spherical_chris
 
+# flat spherical christoffel symbols
+# See eqn (18) in Baumgarte https://arxiv.org/abs/1211.6632
+def get_rflat_spherical_chris(r_here) :
+
+    spherical_chris = np.zeros_like(rank_3_spatial_tensor)
+    one_over_r = 1.0 / r_here
+    
+    # non zero r comps \Gamma^r_ab
+    spherical_chris[i_r][i_t][i_t] = - one_over_r
+    spherical_chris[i_r][i_p][i_p] = - one_over_r
+    
+    # non zero theta comps \Gamma^theta_ab
+    spherical_chris[i_t][i_p][i_p] = - costheta * one_over_r 
+    spherical_chris[i_t][i_r][i_t] = one_over_r
+    spherical_chris[i_t][i_t][i_r] = one_over_r
+
+    # non zero theta comps \Gamma^phi_ab
+    spherical_chris[i_p][i_p][i_r] = one_over_r
+    spherical_chris[i_p][i_r][i_p] = one_over_r
+    spherical_chris[i_p][i_t][i_p] = costheta / sintheta * one_over_r
+    spherical_chris[i_p][i_p][i_t] = costheta / sintheta * one_over_r
+    
+    return spherical_chris
+
 def get_conformal_chris(Delta_ULL, r_here) :
 
     return get_flat_spherical_chris(r_here) + Delta_ULL
@@ -188,6 +212,37 @@ def get_connection(r_here, bar_gamma_UU, bar_gamma_LL, h, dhdr) :
     
     return Delta_U, Delta_ULL, Delta_LLL
 
+# Compute connection of the spatial metric
+# See eqn (23)-(24) in Baumgarte https://arxiv.org/abs/1211.6632
+# \Delta \Gamma^i_{jk} \equiv \bar \Gamma^i_{jk} - \Gamma0^i_{jk}
+#                     = (1/2) * \bar \gamma^{il} ( D_j \bar \gamma_{kl} + D_k \bar \gamma_{jl} - D_l \bar \gamma_{jk} )
+#                     = (1/2) * \bar \gamma^{il} ( D_j \epsilon_{kl} + D_k \epsilon_{jl} - D_l \epsilon_{jk} )
+# where D_i is the covariant derivative associated with the flat metric \eta_{ij}.
+def get_reduced_connection(r_here, r_gamma_UU, r_gamma_LL, h, dhdr) :
+    
+    Delta_ULL = np.zeros_like(rank_3_spatial_tensor)
+    Delta_LLL = np.zeros_like(rank_3_spatial_tensor)
+    hat_D_bar_gamma = get_reduced_metric_deriv(r_here, h, dhdr)
+    
+    for i in range(0, SPACEDIM):
+        for j in range(0, SPACEDIM):    
+            for k in range(0, SPACEDIM):
+                for m in range(0, SPACEDIM):
+                    Delta_ULL[i][j][k] += 0.5 * r_gamma_UU[i][m] * (  hat_D_bar_gamma[j][k][m] 
+                                                                    + hat_D_bar_gamma[k][j][m] 
+                                                                    - hat_D_bar_gamma[m][j][k])
+                    
+    Delta_U =  np.zeros_like(rank_1_spatial_tensor)           
+    for i in range(0, SPACEDIM):
+        for j in range(0, SPACEDIM):    
+            for k in range(0, SPACEDIM):
+                Delta_U[k] += r_gamma_UU[i][j] * Delta_ULL[k][i][j]
+                
+                for m in range(0, SPACEDIM):
+                    Delta_LLL[i][j][k] += r_gamma_LL[i][m] * Delta_ULL[m][j][k]
+    
+    return Delta_U, Delta_ULL, Delta_LLL
+
 # Compute the Ricci tensor
 # See eqn (12) in Baumgarte https://arxiv.org/abs/1211.6632
 def get_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar, dlambardr, 
@@ -224,35 +279,36 @@ def get_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar, dlambardr,
 
 # Compute the Ricci tensor
 # See eqn (12) in Baumgarte https://arxiv.org/abs/1211.6632
-def get_reduced_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar, dlambardr, 
-                             Delta_U, Delta_ULL, Delta_LLL, 
+def get_reduced_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar, dlambardr,
                              r_gamma_UU, r_gamma_LL) :
 
     ricci = np.zeros_like(rank_2_spatial_tensor)
     
     # Get \hat D \Lambda^i
-    hat_D_Lambda = get_hat_D_Lambda(r_here, lambdar, dlambardr)
+    rhat_D_Lambda = get_hat_D_Lambda(r_here, lambdar, dlambardr)
     # Get \bar\gamma^kl \hat D_k \hat D_l \bar\gamma_ij
-    hat_D2_bar_gamma = get_hat_D2_bar_gamma(r_here, h, dhdr, d2hdr2, r_gamma_UU)
+    rhat_D2_bar_gamma = get_rhat_D2_bar_gamma(r_here, h, dhdr, d2hdr2, r_gamma_UU)
+    # Get reduced connection
+    Delta_U, Delta_ULL, Delta_LLL = get_reduced_connection(r_here, r_gamma_UU, r_gamma_LL, h, dhdr)
     
     for i in range(0, SPACEDIM):
         for j in range(0, SPACEDIM):
-            ricci[i][j] += 0.0* -0.5 * hat_D2_bar_gamma[i][j]
+            ricci[i][j] += -0.5 * rhat_D2_bar_gamma[i][j]
                 
             for k in range(0, SPACEDIM):
-                ricci[i][j] += (   0.5 * (r_gamma_LL[k][i] * hat_D_Lambda[j][k] + 
-                                          r_gamma_LL[k][j] * hat_D_Lambda[i][k])
-                                 + 0.0*0.5 * (Delta_U[k] * Delta_LLL[i][j][k] + 
+                ricci[i][j] += (   0.5 * (r_gamma_LL[k][i] * rhat_D_Lambda[j][k] + 
+                                          r_gamma_LL[k][j] * rhat_D_Lambda[i][k])
+                                 + 0.5 * (Delta_U[k] * Delta_LLL[i][j][k]  + 
                                           Delta_U[k] * Delta_LLL[j][i][k]) )
                 
-#                for l in range(0, SPACEDIM):
-#                    for m in range(0, SPACEDIM): 
-#                        ricci[i][j] += bar_gamma_UU[k][l] * (  Delta_ULL[m][k][i] * 
-#                                                               Delta_LLL[j][m][l]
-#                                                             + Delta_ULL[m][k][j] * 
-#                                                               Delta_LLL[i][m][l]
-#                                                             + Delta_ULL[m][i][k] * 
-#                                                               Delta_LLL[m][j][l] )
+                for l in range(0, SPACEDIM):
+                    for m in range(0, SPACEDIM): 
+                        ricci[i][j] += r_gamma_UU[k][l] * (  Delta_ULL[m][k][i] * 
+                                                             Delta_LLL[j][m][l]
+                                                           + Delta_ULL[m][k][j] * 
+                                                             Delta_LLL[i][m][l]
+                                                           + Delta_ULL[m][i][k] * 
+                                                             Delta_LLL[m][j][l] )
             
     return ricci
 
@@ -273,6 +329,23 @@ def get_hat_D_Lambda(r_here, lambdar, dlambardr) :
         for j in range(0, SPACEDIM):  
             for k in range(0, SPACEDIM): 
                 hat_D_Lambda[i][j] += flat_chris[j][i][k] * Lambda[k]
+                
+    return hat_D_Lambda
+
+# \hat D_i \Lambda^j
+# See eqn (26) in Baumgarte https://arxiv.org/abs/1211.6632
+def get_rhat_D_Lambda(r_here, lambdar, dlambardr) :
+    
+    # Make an array for \hat D_i \Lambda^j
+    hat_D_Lambda = np.zeros_like(rank_2_spatial_tensor)
+    
+    # Useful quantities
+    flat_chris = get_rflat_spherical_chris(r_here)
+
+    hat_D_Lambda[i_r][i_r] = dlambardr
+    for i in range(0, SPACEDIM):
+        for j in range(0, SPACEDIM):   
+            hat_D_Lambda[i][j] += flat_chris[j][i][k] * lambdar
                 
     return hat_D_Lambda
 
@@ -305,6 +378,37 @@ def get_hat_D2_bar_gamma(r_here, h, dhdr, d2hdr2, bar_gamma_UU) :
                         hat_D2_bar_gamma[i][j] += - bar_gamma_UU[k][l] * (  hat_D_bar_gamma[m][i][j] * flat_chris[m][l][k]
                                                                           + hat_D_bar_gamma[l][m][j] * flat_chris[m][i][k]
                                                                           + hat_D_bar_gamma[l][i][m] * flat_chris[m][j][k] )
+                                                                        
+                
+    return hat_D2_bar_gamma
+
+# \bar|gamma^kl \hat D_k \hat D_l \bar\gamma_ij 
+# See eqn (27) in Baumgarte https://arxiv.org/abs/1211.6632
+def get_rhat_D2_bar_gamma(r_here, h, dhdr, d2hdr2, r_gamma_UU) :
+    
+    hat_D2_bar_gamma = np.zeros_like(rank_2_spatial_tensor)
+
+    # Useful quantities
+    hat_D_bar_gamma = get_reduced_metric_deriv(r_here, h, dhdr)
+    rflat_chris = get_rflat_spherical_chris(r_here)
+    
+    # explicitly add non zero terms in spherical symmetry
+    hat_D2_bar_gamma[i_r][i_r] = r_gamma_UU[i_r][i_r] *   d2hdr2[i_r][i_r]
+    
+    hat_D2_bar_gamma[i_t][i_t] = r_gamma_UU[i_r][i_r] * ( d2hdr2[i_t][i_t]
+                                                            + dhdr[i_t][i_t] * 2.0 / r_here )
+    hat_D2_bar_gamma[i_p][i_p] = r_gamma_UU[i_r][i_r] * ( d2hdr2[i_p][i_p]
+                                                            + dhdr[i_p][i_p] * 2.0 / r_here )
+    
+    # now add the christoffel terms
+    for i in range(0, SPACEDIM):
+        for j in range(0, SPACEDIM):            
+            for k in range(0, SPACEDIM): 
+                for l in range(0, SPACEDIM):  
+                    for m in range(0, SPACEDIM): 
+                        hat_D2_bar_gamma[i][j] += - r_gamma_UU[k][l] * (  hat_D_bar_gamma[m][i][j] * rflat_chris[m][l][k]
+                                                                        + hat_D_bar_gamma[l][m][j] * rflat_chris[m][i][k]
+                                                                        + hat_D_bar_gamma[l][i][m] * rflat_chris[m][j][k] )
                                                                         
                 
     return hat_D2_bar_gamma
@@ -373,6 +477,63 @@ def get_metric_deriv(r_here, h, dhdr) :
 
     hat_D_epsilon[i_p, i_t, i_p ] += scaling[i_t] * scaling[i_p] * ( sintheta * h[i_r][i_t]                                                                                  + costheta * h[i_t][i_t]
                                                                    - costheta * h[i_p][i_p] )
+    hat_D_epsilon[i_p, i_p, i_t ] = hat_D_epsilon[i_p, i_t, i_p]
+            
+    return hat_D_epsilon
+
+# Covariant derivative of the spatial metric \hat{D} \bar{\gamma}_{ij} with 
+# respect to the flat metric in spherical polar coordinates
+# See eqn (25) in Baumgarte https://arxiv.org/abs/1211.6632
+def get_reduced_metric_deriv(r_here, h, dhdr) :
+
+    hat_D_epsilon = np.zeros_like(rank_3_spatial_tensor)
+    
+    # assume spherical symmetry
+    dhdtheta = np.zeros_like(dhdr)
+    dhdphi = np.zeros_like(dhdr)
+    
+    # some useful quantities
+    r2 = r_here * r_here
+    scaling = np.array([1.0, r_here , r_here*sintheta])
+    
+    # Fill derivatives \hat D_k epsilon_ij
+    for i in range(0, SPACEDIM):
+        for j in range(0, SPACEDIM):
+            hat_D_epsilon[i_r, i, j]   = dhdr[i][j]     / scaling[i_r]
+            hat_D_epsilon[i_t, i, j]   = dhdtheta[i][j] / scaling[i_t]
+            hat_D_epsilon[i_p, i, j]   = dhdphi[i][j]   / scaling[i_p]
+            
+    # Add additional terms from christoffels etc
+    
+    # d/dtheta
+    hat_D_epsilon[i_t, i_r, i_r ] += - 2.0 * h[i_r][i_t] / scaling[i_t]
+    hat_D_epsilon[i_t, i_t, i_t ] +=   2.0 * h[i_r][i_t] / scaling[i_t]
+    hat_D_epsilon[i_t, i_p, i_p ] +=   0.0
+    
+    hat_D_epsilon[i_t, i_r, i_t ] += (  h[i_r][i_r] - h[i_t][i_t] ) / scaling[i_t]
+    hat_D_epsilon[i_t, i_t, i_r ] = hat_D_epsilon[i_t, i_r, i_t] 
+    
+    hat_D_epsilon[i_t, i_r, i_p ] += (- h[i_t][i_p]) / scaling[i_t]
+    hat_D_epsilon[i_t, i_p, i_r ] = hat_D_epsilon[i_t, i_r, i_p]
+
+    hat_D_epsilon[i_t, i_t, i_p ] += (  h[i_r][i_p]) / scaling[i_t]
+    hat_D_epsilon[i_t, i_p, i_t ] = hat_D_epsilon[i_t, i_t, i_p]
+    
+    # d/dphi
+    hat_D_epsilon[i_p, i_r, i_r ] += - 2.0 * sintheta * h[i_r][i_p] / scaling[i_p]
+    hat_D_epsilon[i_p, i_t, i_t ] += - 2.0 * costheta * h[i_t][i_p] / scaling[i_p]
+    hat_D_epsilon[i_p, i_p, i_p ] +=   2.0 * ( costheta * h[i_t][i_p] 
+                                                              + sintheta * h[i_r][i_p] ) / scaling[i_p]
+    
+    hat_D_epsilon[i_p, i_r, i_t ] += (- costheta * h[i_r][i_p] - sintheta * h[i_t][i_p] ) / scaling[i_p]
+    hat_D_epsilon[i_p, i_t, i_r ] = hat_D_epsilon[i_p, i_r, i_t] 
+    
+    hat_D_epsilon[i_p, i_r, i_p ] += ( costheta * h[i_r][i_t] + sintheta * h[i_r][i_r]
+                                                                    - sintheta * h[i_p][i_p] ) / scaling[i_p]
+    hat_D_epsilon[i_p, i_p, i_r ] = hat_D_epsilon[i_p, i_r, i_p]
+
+    hat_D_epsilon[i_p, i_t, i_p ] += ( sintheta * h[i_r][i_t] + costheta * h[i_t][i_t]
+                                                                    - costheta * h[i_p][i_p] ) / scaling[i_p]
     hat_D_epsilon[i_p, i_p, i_t ] = hat_D_epsilon[i_p, i_t, i_p]
             
     return hat_D_epsilon

@@ -189,7 +189,7 @@ def get_rhs(t_i, vars_vec, R, N_r, progress_bar, state) :
         bar_Rij = get_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar[ix], dlambdardx[ix], 
                                    Delta_U, Delta_ULL, Delta_LLL, bar_gamma_UU, bar_gamma_LL)
         rbar_Rij = get_reduced_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar[ix], dlambdardx[ix], 
-                                   Delta_U, Delta_ULL, Delta_LLL, r_gamma_UU, r_gamma_LL)        
+                                   r_gamma_UU, r_gamma_LL)        
 
         # \bar \gamma^i_jk
         conformal_chris = get_conformal_chris(Delta_ULL, r_here)
