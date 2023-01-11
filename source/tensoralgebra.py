@@ -156,6 +156,18 @@ def get_A_UU(a, r_gamma_UU, r_here):
     
     return np.diag( inv_scaling * inv_scaling * np.diag(a_UU) )
 
+# Compute a^ij given a_ij
+def get_a_UU(a, r_gamma_UU):
+    
+    # Note that bar_gamma_UU is symmetric.
+    # If it wasn't symmetric, we would need to be careful about
+    # transposing when multiplying from the right.
+    # multi_dot is kind of overkill here for 3x3 matrices...
+    # but it's good to know about!
+    a_UU = np.linalg.multi_dot( [ r_gamma_UU, a, r_gamma_UU ] ) 
+    
+    return a_UU
+
 # Compute trace of (traceless part of) extrinsic curvature
 def get_trace_A(a, r_gamma_UU) :
 
@@ -340,12 +352,12 @@ def get_rhat_D_Lambda(r_here, lambdar, dlambardr) :
     hat_D_Lambda = np.zeros_like(rank_2_spatial_tensor)
     
     # Useful quantities
-    flat_chris = get_rflat_spherical_chris(r_here)
+    rflat_chris = get_rflat_spherical_chris(r_here)
 
     hat_D_Lambda[i_r][i_r] = dlambardr
     for i in range(0, SPACEDIM):
         for j in range(0, SPACEDIM):   
-            hat_D_Lambda[i][j] += flat_chris[j][i][k] * lambdar
+            hat_D_Lambda[i][j] += rflat_chris[j][i][k] * lambdar
                 
     return hat_D_Lambda
 
@@ -389,6 +401,7 @@ def get_rhat_D2_bar_gamma(r_here, h, dhdr, d2hdr2, r_gamma_UU) :
     hat_D2_bar_gamma = np.zeros_like(rank_2_spatial_tensor)
 
     # Useful quantities
+    one_over_r = 1.0 / r_here
     hat_D_bar_gamma = get_reduced_metric_deriv(r_here, h, dhdr)
     rflat_chris = get_rflat_spherical_chris(r_here)
     
@@ -396,21 +409,26 @@ def get_rhat_D2_bar_gamma(r_here, h, dhdr, d2hdr2, r_gamma_UU) :
     hat_D2_bar_gamma[i_r][i_r] = r_gamma_UU[i_r][i_r] *   d2hdr2[i_r][i_r]
     
     hat_D2_bar_gamma[i_t][i_t] = r_gamma_UU[i_r][i_r] * ( d2hdr2[i_t][i_t]
-                                                            + dhdr[i_t][i_t] * 2.0 / r_here )
+                                                            + dhdr[i_t][i_t] * 2.0 * one_over_r )
     hat_D2_bar_gamma[i_p][i_p] = r_gamma_UU[i_r][i_r] * ( d2hdr2[i_p][i_p]
-                                                            + dhdr[i_p][i_p] * 2.0 / r_here )
-    
+                                                            + dhdr[i_p][i_p] * 2.0 * one_over_r )
+
     # now add the christoffel terms
     for i in range(0, SPACEDIM):
-        for j in range(0, SPACEDIM):            
-            for k in range(0, SPACEDIM): 
-                for l in range(0, SPACEDIM):  
-                    for m in range(0, SPACEDIM): 
-                        hat_D2_bar_gamma[i][j] += - r_gamma_UU[k][l] * (  hat_D_bar_gamma[m][i][j] * rflat_chris[m][l][k]
-                                                                        + hat_D_bar_gamma[l][m][j] * rflat_chris[m][i][k]
-                                                                        + hat_D_bar_gamma[l][i][m] * rflat_chris[m][j][k] )
-                                                                        
-                
+        for j in range(0, SPACEDIM): 
+            hat_D2_bar_gamma[i][j] += (r_gamma_UU[i_t][i_t] * hat_D_bar_gamma[i_r][i][j] * one_over_r +
+                                       r_gamma_UU[i_p][i_p] * hat_D_bar_gamma[i_r][i][j] * one_over_r * sin2theta)
+    
+    hat_D2_bar_gamma[i_r][i_r] += - 2.0 * (r_gamma_UU[i_t][i_t] * hat_D_bar_gamma[i_t][i_t][i_r] * one_over_r
+                                           + r_gamma_UU[i_p][i_p] * hat_D_bar_gamma[i_p][i_p][i_r] * one_over_r)
+    
+    hat_D2_bar_gamma[i_t][i_t] += - 2.0 * (r_gamma_UU[i_r][i_r] * hat_D_bar_gamma[i_r][i_t][i_t] * one_over_r
+                                             - r_gamma_UU[i_t][i_t] * hat_D_bar_gamma[i_t][i_r][i_t] * one_over_r)
+    
+    hat_D2_bar_gamma[i_p][i_p] += - 2.0 * (r_gamma_UU[i_r][i_r] * hat_D_bar_gamma[i_r][i_p][i_p] * one_over_r
+                                             - r_gamma_UU[i_p][i_p] * hat_D_bar_gamma[i_p][i_r][i_p] * one_over_r * sin2theta)
+    
+    
     return hat_D2_bar_gamma
 
 # We split the conformal metric into the form
@@ -499,41 +517,38 @@ def get_reduced_metric_deriv(r_here, h, dhdr) :
     # Fill derivatives \hat D_k epsilon_ij
     for i in range(0, SPACEDIM):
         for j in range(0, SPACEDIM):
-            hat_D_epsilon[i_r, i, j]   = dhdr[i][j]     / scaling[i_r]
-            hat_D_epsilon[i_t, i, j]   = dhdtheta[i][j] / scaling[i_t]
-            hat_D_epsilon[i_p, i, j]   = dhdphi[i][j]   / scaling[i_p]
+            hat_D_epsilon[i_r, i, j]   = dhdr[i][j]
+            hat_D_epsilon[i_t, i, j]   = 0.0
+            hat_D_epsilon[i_p, i, j]   = 0.0
             
     # Add additional terms from christoffels etc
     
     # d/dtheta
-    hat_D_epsilon[i_t, i_r, i_r ] += - 2.0 * h[i_r][i_t] / scaling[i_t]
-    hat_D_epsilon[i_t, i_t, i_t ] +=   2.0 * h[i_r][i_t] / scaling[i_t]
+    hat_D_epsilon[i_t, i_r, i_r ] +=   0.0
+    hat_D_epsilon[i_t, i_t, i_t ] +=   0.0
     hat_D_epsilon[i_t, i_p, i_p ] +=   0.0
     
     hat_D_epsilon[i_t, i_r, i_t ] += (  h[i_r][i_r] - h[i_t][i_t] ) / scaling[i_t]
     hat_D_epsilon[i_t, i_t, i_r ] = hat_D_epsilon[i_t, i_r, i_t] 
     
-    hat_D_epsilon[i_t, i_r, i_p ] += (- h[i_t][i_p]) / scaling[i_t]
+    hat_D_epsilon[i_t, i_r, i_p ] += 0.0
     hat_D_epsilon[i_t, i_p, i_r ] = hat_D_epsilon[i_t, i_r, i_p]
 
-    hat_D_epsilon[i_t, i_t, i_p ] += (  h[i_r][i_p]) / scaling[i_t]
+    hat_D_epsilon[i_t, i_t, i_p ] += 0.0
     hat_D_epsilon[i_t, i_p, i_t ] = hat_D_epsilon[i_t, i_t, i_p]
     
     # d/dphi
-    hat_D_epsilon[i_p, i_r, i_r ] += - 2.0 * sintheta * h[i_r][i_p] / scaling[i_p]
-    hat_D_epsilon[i_p, i_t, i_t ] += - 2.0 * costheta * h[i_t][i_p] / scaling[i_p]
-    hat_D_epsilon[i_p, i_p, i_p ] +=   2.0 * ( costheta * h[i_t][i_p] 
-                                                              + sintheta * h[i_r][i_p] ) / scaling[i_p]
+    hat_D_epsilon[i_p, i_r, i_r ] += 0.0
+    hat_D_epsilon[i_p, i_t, i_t ] += 0.0
+    hat_D_epsilon[i_p, i_p, i_p ] += 0.0
     
-    hat_D_epsilon[i_p, i_r, i_t ] += (- costheta * h[i_r][i_p] - sintheta * h[i_t][i_p] ) / scaling[i_p]
+    hat_D_epsilon[i_p, i_r, i_t ] += 0.0
     hat_D_epsilon[i_p, i_t, i_r ] = hat_D_epsilon[i_p, i_r, i_t] 
     
-    hat_D_epsilon[i_p, i_r, i_p ] += ( costheta * h[i_r][i_t] + sintheta * h[i_r][i_r]
-                                                                    - sintheta * h[i_p][i_p] ) / scaling[i_p]
+    hat_D_epsilon[i_p, i_r, i_p ] += ( sintheta * h[i_r][i_r] - sintheta * h[i_p][i_p] ) / scaling[i_p]
     hat_D_epsilon[i_p, i_p, i_r ] = hat_D_epsilon[i_p, i_r, i_p]
 
-    hat_D_epsilon[i_p, i_t, i_p ] += ( sintheta * h[i_r][i_t] + costheta * h[i_t][i_t]
-                                                                    - costheta * h[i_p][i_p] ) / scaling[i_p]
+    hat_D_epsilon[i_p, i_t, i_p ] += 0.0
     hat_D_epsilon[i_p, i_p, i_t ] = hat_D_epsilon[i_p, i_t, i_p]
             
     return hat_D_epsilon

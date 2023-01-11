@@ -99,35 +99,43 @@ def get_rhs_a(r_here, a, bar_div_shift, lapse, K, em4phi, rbar_Rij, conformal_ch
             
     return dadt
 
-def get_rhs_lambdar(r_here, d2shiftrdr2, dshiftrdr, shiftr, Delta_U, Delta_ULL, bar_div_shift, flat_chris,
-                    bar_gamma_UU, bar_A_UU, lapse, dlapsedr, dphidr, dKdr, Si) :
+def get_rhs_lambdar(r_here, d2shiftrdr2, dshiftrdr, shiftr, h, dhdr, Delta_U, Delta_ULL, bar_div_shift,
+                    r_gamma_UU, a_UU, lapse, dlapsedr, dphidr, dKdr, Si) :
     
+    
+    # Useful quantities
+    rflat_chris = get_rflat_spherical_chris(r_here)
     
     # \bar \gamma^ij \hat D_i \hat D_j shift^r
-    hat_D2_shiftr = (     bar_gamma_UU[i_r][i_r] * d2shiftrdr2
-                        - bar_gamma_UU[i_t][i_t] * flat_chris[i_r][i_t][i_t] * dshiftrdr
-                        - bar_gamma_UU[i_p][i_p] * flat_chris[i_r][i_p][i_p] * dshiftrdr
-                        + ( bar_gamma_UU[i_t][i_t] * flat_chris[i_r][i_t][i_t] 
-                                                   * flat_chris[i_t][i_r][i_t]  * shiftr)
-                        + ( bar_gamma_UU[i_p][i_p] * flat_chris[i_r][i_p][i_p] 
-                                                   * flat_chris[i_p][i_r][i_p]  * shiftr) )
+    hat_D2_shiftr = (     r_gamma_UU[i_r][i_r] * d2shiftrdr2
+                        - r_gamma_UU[i_t][i_t] * rflat_chris[i_r][i_t][i_t] * dshiftrdr
+                        - r_gamma_UU[i_p][i_p] * rflat_chris[i_r][i_p][i_p] * dshiftrdr
+                        + ( r_gamma_UU[i_t][i_t] * rflat_chris[i_r][i_t][i_t] 
+                                                   * rflat_chris[i_t][i_r][i_t]  * shiftr)
+                        + ( r_gamma_UU[i_p][i_p] * rflat_chris[i_r][i_p][i_p] 
+                                                   * rflat_chris[i_p][i_r][i_p]  * shiftr) )
 
     # This is \bar D^r (\bar D_i \beta^i) note the raised index of r
-    bar_D_div_shift = bar_gamma_UU[i_r][i_r] * (d2shiftrdr2
+    bar_D_div_shift = r_gamma_UU[i_r][i_r] * (d2shiftrdr2
                                                     + 2.0 / r_here * dshiftrdr 
                                                     - 2.0 / r_here / r_here * shiftr)
 
+    # reduced Delta^r_tt and Delta^r_pp
+    r_Delta_rrr = Delta_ULL[i_r][i_r][i_r]
+    r_Delta_rtt = 0.5 * r_gamma_UU[i_r][i_r] * (2.0 / r_here * (h[i_r][i_r] - h[i_t][i_t]) - dhdr[i_t][i_t])
+    r_Delta_rpp = r_Delta_rtt
+    
     # Calculate rhs
     dlambdardt = (hat_D2_shiftr 
                   + two_thirds * Delta_U[i_r] * bar_div_shift
                   + one_third * bar_D_div_shift
-                  - 2.0 * bar_A_UU[i_r][i_r] * (dlapsedr 
+                  - 2.0 * a_UU[i_r][i_r] * (dlapsedr 
                                                 - 6.0 * lapse * dphidr
-                                                - lapse * Delta_ULL[i_r][i_r][i_r])
-                  + 2.0 * bar_A_UU[i_t][i_t] * lapse * Delta_ULL[i_r][i_t][i_t]
-                  + 2.0 * bar_A_UU[i_p][i_p] * lapse * Delta_ULL[i_r][i_p][i_p]
-                  - four_thirds * lapse * bar_gamma_UU[i_r][i_r] * dKdr
-                  - 2.0 *  eight_pi_G * lapse * bar_gamma_UU[i_r][i_r] * Si[i_r])
+                                                - lapse * r_Delta_rrr)
+                  + 2.0 * a_UU[i_t][i_t] * lapse * r_Delta_rtt
+                  + 2.0 * a_UU[i_p][i_p] * lapse * r_Delta_rpp
+                  - four_thirds * lapse * r_gamma_UU[i_r][i_r] * dKdr
+                  - 2.0 *  eight_pi_G * lapse * r_gamma_UU[i_r][i_r] * Si[i_r])
     
     return dlambdardt
 

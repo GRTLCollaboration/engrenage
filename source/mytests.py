@@ -221,7 +221,7 @@ def get_test_vars_values_bh(R, N_r) :
     test_vars_values = np.zeros(NUM_VARS * N)
     
     # Use the Kerr Schild solution with a=0 which has non trivial Kij
-    for ix in range(num_ghosts, N-num_ghosts) :
+    for ix in range(num_ghosts, N) :
 
         # position on the grid
         r_i = r[ix]
@@ -266,14 +266,7 @@ def get_test_vars_values_bh(R, N_r) :
         test_vars_values[ix + idx_att * N]   = em4phi * (Ktt_over_r2 - 1.0/3.0 * gtt_over_r2 * K)
         test_vars_values[ix + idx_app * N]   = em4phi * (Kpp_over_r2sintheta - 1.0/3.0 * gpp_over_r2sintheta * K)
         test_vars_values[ix + idx_K * N]     = K
-        
-    # overwrite outer boundaries with extrapolation (zeroth order)
-    for ivar in range(0, NUM_VARS) :
-        boundary_cells = np.array([(ivar + 1)*N-3, (ivar + 1)*N-2, (ivar + 1)*N-1])
-        for count, ix in enumerate(boundary_cells) :
-            offset = -1 - count
-            test_vars_values[ix]    = test_vars_values[ix + offset]
-
+       
     # overwrite inner cells using parity under r -> - r
     for ivar in range(0, NUM_VARS) :
         boundary_cells = np.array([(ivar)*N, (ivar)*N+1, (ivar)*N+2])

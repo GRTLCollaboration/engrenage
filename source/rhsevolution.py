@@ -12,7 +12,7 @@ from source.mymatter import *
 from source.bssn_rhs import *
     
 # function that returns the rhs for each of the field vars
-def get_rhs(t_i, vars_vec, R, N_r, progress_bar, state) :
+def get_rhs(t_i, vars_vec, R, N_r, eta, progress_bar, state) :
 
     # Some functions for timing and tracking progress
     start = time.time()
@@ -179,15 +179,14 @@ def get_rhs(t_i, vars_vec, R, N_r, progress_bar, state) :
         bar_gamma_UU = get_inverse_metric(r_here, h)
         
         # \bar A_ij, \bar A^ij and the trace A_i^i, then Asquared = \bar A_ij \bar A^ij
-        bar_A_LL = get_A_LL(r_here, a)
-        bar_A_UU = get_A_UU(a, r_gamma_UU, r_here)
+        a_UU = get_a_UU(a, r_gamma_UU)
         traceA   = get_trace_A(a, r_gamma_UU)
         Asquared = get_Asquared(a, r_gamma_UU)
 
         # The connections Delta^i, Delta^i_jk and Delta_ijk
         Delta_U, Delta_ULL, Delta_LLL  = get_connection(r_here, bar_gamma_UU, bar_gamma_LL, h, dhdr)
-        bar_Rij = get_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar[ix], dlambdardx[ix], 
-                                   Delta_U, Delta_ULL, Delta_LLL, bar_gamma_UU, bar_gamma_LL)
+        #bar_Rij = get_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar[ix], dlambdardx[ix], 
+        #                           Delta_U, Delta_ULL, Delta_LLL, bar_gamma_UU, bar_gamma_LL)
         rbar_Rij = get_reduced_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar[ix], dlambdardx[ix], 
                                    r_gamma_UU, r_gamma_LL)        
 
@@ -226,13 +225,13 @@ def get_rhs(t_i, vars_vec, R, N_r, progress_bar, state) :
                                     d2phidx2[ix], dphidx[ix], d2lapsedx2[ix], dlapsedx[ix], 
                                     h, dhdr, d2hdr2, matter_rSij)
         
-        rhs_lambdar[ix] = get_rhs_lambdar(r_here, d2shiftrdx2[ix], dshiftrdx[ix], shiftr[ix], 
-                                          Delta_U, Delta_ULL, bar_div_shift, flat_chris,
-                                          bar_gamma_UU, bar_A_UU, lapse[ix],
+        rhs_lambdar[ix] = get_rhs_lambdar(r_here, d2shiftrdx2[ix], dshiftrdx[ix], shiftr[ix], h, dhdr,
+                                          Delta_U, Delta_ULL, bar_div_shift,
+                                          r_gamma_UU, a_UU, lapse[ix],
                                           dlapsedx[ix], dphidx[ix], dKdx[ix], matter_Si)
         
         # Set the gauge vars rhs
-        eta = 1.0 # 1+log slicing damping coefficient of order 1/M_adm of spacetime        
+        # eta is the 1+log slicing damping coefficient - of order 1/M_adm of spacetime        
         rhs_br[ix]     = 0.75 * rhs_lambdar[ix] - eta * br[ix]
         rhs_shiftr[ix] = br[ix]
         rhs_lapse[ix]  = - 2.0 * lapse[ix] * K[ix]        
@@ -316,7 +315,7 @@ def get_rhs(t_i, vars_vec, R, N_r, progress_bar, state) :
     #################################################################################################### 
             
     # finally add Kreiss Oliger dissipation
-    sigma = 1.0 # kreiss-oliger damping coefficient
+    sigma = 10.0 # kreiss-oliger damping coefficient, max_step should be limited to 0.1 R/N_r
     
     diss = np.zeros_like(vars_vec) 
     for ivar in range(0, NUM_VARS) :
@@ -333,11 +332,7 @@ def get_rhs(t_i, vars_vec, R, N_r, progress_bar, state) :
         var_asymptotic_power = asymptotic_power[ivar]
         for count, ix in enumerate(boundary_cells) :
             offset = -1 - count
-            if (ivar == idx_lapse) :
-                rhs[ix]    = 1.0 - ((1.0 - rhs[ix + offset]) * 
-                                    (r[N - 3 + count] / r[N - 4])**var_asymptotic_power)
-            else :
-                rhs[ix]    = rhs[ix + offset] * (r[N - 3 + count] / r[N - 4])**var_asymptotic_power
+            rhs[ix]    = rhs[ix + offset] * (r[N - 3 + count] / r[N - 4])**var_asymptotic_power
 
     # overwrite inner cells using parity under r -> - r
     for ivar in range(0, NUM_VARS) :

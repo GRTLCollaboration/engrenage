@@ -62,9 +62,9 @@ diss_stencil = np.array([+1., -6., +15., -20., +15., -6., +1.]) / 64.0
 def get_dissipation(f, oneoverdx, sigma) :
     diss_x = np.convolve(f, diss_stencil, mode='same')  
         
-    # Clear out the ghost zones
+    # Clear out the ghost zones and zero near outer boundary
     diss_x[0:num_ghosts] = 0.
-    diss_x[-num_ghosts:] = 0.
+    diss_x[-(num_ghosts+3):] = 0.
         
     return oneoverdx * sigma * diss_x
 
