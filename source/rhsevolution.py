@@ -44,7 +44,7 @@ def get_rhs(t_i, vars_vec, R, N_r, eta, progress_bar, state) :
         h[i_r][i_r] = hrr[ix]
         h[i_t][i_t] = htt[ix]
         h[i_p][i_p] = hpp[ix]
-        determinant = get_rescaled_determinant_gamma(h)
+        determinant = abs(get_rescaled_determinant_gamma(h))
         
         #if(abs(determinant - 1.0) > 1e-5) :
         #    print("det is", determinant, " at ", r[ix])

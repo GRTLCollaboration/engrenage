@@ -20,9 +20,9 @@ def get_initial_vars_values(R, N_r) :
     initial_vars_values = np.zeros(NUM_VARS * N)
     
     # Use oscilloton data to construct functions for the vars
-    grr0_data    = np.loadtxt("source/initial_data/grr0.csv")
-    lapse0_data  = np.loadtxt("source/initial_data/lapse0.csv")
-    v0_data      = np.loadtxt("source/initial_data/v0.csv")
+    grr0_data    = np.loadtxt("../source/initial_data/grr0.csv")
+    lapse0_data  = np.loadtxt("../source/initial_data/lapse0.csv")
+    v0_data      = np.loadtxt("../source/initial_data/v0.csv")
     
     # set up grid in radial direction in areal polar coordinates
     dR = 0.01;
