@@ -27,11 +27,19 @@ For more information and class resources see the [wiki](https://github.com/KAClo
     pip install -r ./requirements.txt
     ```
 
-4. Run the Jupyter notebook:
+4. Run the Jupyter notebook use either:
 
     ```sh
-    jupyter lab BabyGRChombo.ipynb
+    jupyter-lab
     ```
+    
+    or
+
+    ```sh
+    jupyter notebook
+    ```
+    (depending on the style of interface that your prefer)
+    
 
 # Acknowledgements
 

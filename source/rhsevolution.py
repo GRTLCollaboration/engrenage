@@ -171,22 +171,21 @@ def get_rhs(t_i, vars_vec, R, N_r, eta, progress_bar, state) :
         r_gamma_LL = get_rescaled_metric(h)
         r_gamma_UU = get_rescaled_inverse_metric(h)
         
-        # (unscaled) \bar\gamma_ij and \bar\gamma^ij
-        bar_gamma_LL = get_metric(r_here, h)
-        bar_gamma_UU = get_inverse_metric(r_here, h)
-        
         # \bar A_ij, \bar A^ij and the trace A_i^i, then Asquared = \bar A_ij \bar A^ij
         a_UU = get_a_UU(a, r_gamma_UU)
         traceA   = get_trace_A(a, r_gamma_UU)
         Asquared = get_Asquared(a, r_gamma_UU)
 
-        # The connections Delta^i, Delta^i_jk and Delta_ijk
-        Delta_U, Delta_ULL, Delta_LLL  = get_connection(r_here, bar_gamma_UU, bar_gamma_LL, h, dhdr)
-        rbar_Rij = get_rescaled_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar[ix], dlambdardx[ix], 
-                                   r_gamma_UU, r_gamma_LL)        
-
-        # \bar \gamma^i_jk
-        conformal_chris = get_conformal_chris(Delta_ULL, r_here)
+        # The rescaled connections Delta^i, Delta^i_jk and Delta_ijk
+        rDelta_U, rDelta_ULL, rDelta_LLL  = get_rescaled_connection(r_here, r_gamma_UU, 
+                                                                    r_gamma_LL, h, dhdr)
+        # rescaled \bar \Gamma^i_jk
+        r_conformal_chris = get_rescaled_conformal_chris(rDelta_ULL, r_here)
+        
+        # rescaled Ricci tensor
+        rbar_Rij = get_rescaled_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar[ix], dlambdardx[ix],
+                                             rDelta_U, rDelta_ULL, rDelta_LLL, 
+                                             r_gamma_UU, r_gamma_LL)        
 
         # This is the conformal divergence of the shift \bar D_i \beta^i
         # Use the fact that the conformal metric determinant is \hat \gamma = r^4 sin2theta
@@ -203,8 +202,8 @@ def get_rhs(t_i, vars_vec, R, N_r, eta, progress_bar, state) :
 
         # Get the matter rhs - see mymatter.py
         rhs_u[ix], rhs_v[ix] = get_matter_rhs(u[ix], v[ix], dudx[ix], d2udx2[ix], 
-                                              bar_gamma_UU, em4phi, dphidx[ix], 
-                                              K[ix], lapse[ix], dlapsedx[ix], conformal_chris)
+                                              r_gamma_UU, em4phi, dphidx[ix], 
+                                              K[ix], lapse[ix], dlapsedx[ix], r_conformal_chris)
 
         # Get the bssn rhs - see bssn.py
         rhs_phi[ix]     = get_rhs_phi(lapse[ix], K[ix], bar_div_shift)
@@ -213,15 +212,15 @@ def get_rhs(t_i, vars_vec, R, N_r, eta, progress_bar, state) :
                                     bar_div_shift, a)
         
         rhs_K[ix]       = get_rhs_K(lapse[ix], K[ix], Asquared, em4phi, d2lapsedx2[ix], dlapsedx[ix], 
-                                    conformal_chris, dphidx[ix], bar_gamma_UU, matter_rho, matter_S)
+                                    r_conformal_chris, dphidx[ix], r_gamma_UU, matter_rho, matter_S)
         
         rhs_a           = get_rhs_a(r_here, a, bar_div_shift, lapse[ix], K[ix], em4phi, rbar_Rij,
-                                    conformal_chris, Delta_ULL, r_gamma_UU, bar_gamma_UU,
+                                    r_conformal_chris, r_gamma_UU, r_gamma_LL,
                                     d2phidx2[ix], dphidx[ix], d2lapsedx2[ix], dlapsedx[ix], 
                                     h, dhdr, d2hdr2, matter_rSij)
         
         rhs_lambdar[ix] = get_rhs_lambdar(r_here, d2shiftrdx2[ix], dshiftrdx[ix], shiftr[ix], h, dhdr,
-                                          Delta_U, Delta_ULL, bar_div_shift,
+                                          rDelta_U, rDelta_ULL, bar_div_shift,
                                           r_gamma_UU, a_UU, lapse[ix],
                                           dlapsedx[ix], dphidx[ix], dKdx[ix], matter_Si)
         

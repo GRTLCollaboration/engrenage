@@ -8,16 +8,16 @@ from source.tensoralgebra import *
 # params for matter
 scalar_mu = 1.0 # this is an inverse length scale related to the scalar compton wavelength
 
-def get_matter_rhs(u, v, dudr, d2udr2, bar_gamma_UU, em4phi, 
-                   dphidr, K, lapse, dlapsedr, conformal_chris) :
+def get_matter_rhs(u, v, dudr, d2udr2, r_gamma_UU, em4phi, 
+                   dphidr, K, lapse, dlapsedr, r_conformal_chris) :
     
     dudt =  lapse * v
-    dvdt =  lapse * K * v + bar_gamma_UU[i_r][i_r] * em4phi * (2.0 * lapse * dphidr * dudr 
+    dvdt =  lapse * K * v + r_gamma_UU[i_r][i_r] * em4phi * (2.0 * lapse * dphidr * dudr 
                                                                + lapse * d2udr2
                                                                + dlapsedr * dudr)
     for i in range(0, SPACEDIM): 
         for j in range(0, SPACEDIM):
-            dvdt +=  - em4phi * lapse * bar_gamma_UU[i][j] * conformal_chris[i_r][i][j] * dudr
+            dvdt +=  - em4phi * lapse * r_gamma_UU[i][j] * r_conformal_chris[i_r][i][j] * dudr
     
     # Add mass term
     dVdu = scalar_mu * scalar_mu * u
