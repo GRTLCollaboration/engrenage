@@ -56,8 +56,8 @@ def get_initial_vars_values(R, N_r) :
         initial_vars_values[ix + idx_phi * N]   = phi_here
         em4phi = np.exp(-4.0*phi_here)
         initial_vars_values[ix + idx_hrr * N]   = em4phi * grr_here - 1
-        initial_vars_values[ix + idx_htt * N]      = em4phi * gtt_over_r2 - 1.0
-        initial_vars_values[ix + idx_hpp * N]      = em4phi * gpp_over_r2sintheta - 1.0
+        initial_vars_values[ix + idx_htt * N]   = em4phi * gtt_over_r2 - 1.0
+        initial_vars_values[ix + idx_hpp * N]   = em4phi * gpp_over_r2sintheta - 1.0
 
     # overwrite inner cells using parity under r -> - r
     for ivar in range(0, NUM_VARS) :

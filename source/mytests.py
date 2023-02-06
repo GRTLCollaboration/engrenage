@@ -1,6 +1,7 @@
 # mytests.py
 
-# set the initial conditions for all the variables
+# File providing test data for the tests - these are solutions where the curvature quantities are known
+# so provide a test that everything is working ok
 
 from source.uservariables import *
 from source.tensoralgebra import *
@@ -207,7 +208,10 @@ def get_test_vars_values_2(R, N_r) :
         
     return r, test_vars_values
 
-# This routine gives us the Schwazschild metric in ingoing eddington finkelstien coords (t = t_schwarz - (r-r*))
+# This routine gives us the Schwazschild metric in the original ingoing Eddington Finkelstien coords
+# that is r = r_schwarzschild and t = t_schwarzschild - (r-r*)
+# For this the RHS should be zero, but unlike in Schwarschild coords Kij and the shift are non trivial
+# (thanks to Ulrich Sperhake for suggesting this test)
 def get_test_vars_values_bh(R, N_r) :
 
     # Set up grid values and params

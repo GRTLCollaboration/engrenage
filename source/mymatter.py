@@ -25,11 +25,11 @@ def get_matter_rhs(u, v, dudr, d2udr2, bar_gamma_UU, em4phi,
     
     return dudt, dvdt
 
-def get_rho(u, dudr, v, bar_gamma_UU, em4phi) :
+def get_rho(u, dudr, v, r_gamma_UU, em4phi) :
 
     # The potential V(u) = 1/2 mu^2 u^2
     V_u = 0.5 * scalar_mu * scalar_mu * u * u
-    rho = 0.5 * v*v + 0.5 * em4phi * bar_gamma_UU[i_r][i_r] * dudr * dudr + V_u
+    rho = 0.5 * v*v + 0.5 * em4phi * r_gamma_UU[i_r][i_r] * dudr * dudr + V_u
 
     return rho
 
@@ -40,8 +40,8 @@ def get_Si(u, dudr, v) :
     
     return S_i
 
-# Get rescaled Sij value
-def get_rSij(u, dudr, v, r_gamma_UU, em4phi, r_gamma_LL) :
+# Get rescaled Sij value (rSij = diag[Srr, S_tt / r^2, S_pp / r^2 sin2theta ])
+def get_rescaled_Sij(u, dudr, v, r_gamma_UU, em4phi, r_gamma_LL) :
     rS_ij = np.zeros_like(rank_2_spatial_tensor)
 
     # The potential V(u) = 1/2 mu^2 u^2

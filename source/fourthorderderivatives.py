@@ -3,8 +3,9 @@
 import numpy as np
 
 # function that returns the derivatives of a field f in 1D (radial)
+
 # Assumes num_ghosts ghost cells at either end of the vector of values
-num_ghosts = 3
+from source.uservariables import *
 
 # second derivative
 d2dx2_stencil = np.array([-1., +16., -30., +16., -1.0]) / 12.0

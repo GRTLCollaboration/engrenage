@@ -13,13 +13,14 @@ def get_rhs_phi(lapse, K, bar_div_shift) :
     
     return dphidt
 
-def get_rhs_h(r_gamma_LL, lapse, traceA, dshiftrdx, shiftr, bar_div_shift, flat_chris, a) :
+def get_rhs_h(r_here, r_gamma_LL, lapse, traceA, dshiftrdx, shiftr, bar_div_shift, a) :
     
     # This is \hat\gamma_jk \hat D_i shift^k (note Etienne paper notation ambiguity - this is not \hat D_i \beta_j)
+    rflat_chris = get_rescaled_flat_spherical_chris(r_here)
     rhat_D_shift = np.zeros_like(rank_2_spatial_tensor)
     rhat_D_shift[i_r][i_r] = dshiftrdx
-    rhat_D_shift[i_t][i_t] = flat_chris[i_t][i_t][i_r] * shiftr
-    rhat_D_shift[i_p][i_p] = flat_chris[i_p][i_p][i_r] * shiftr
+    rhat_D_shift[i_t][i_t] = rflat_chris[i_t][i_t][i_r] * shiftr
+    rhat_D_shift[i_p][i_p] = rflat_chris[i_p][i_p][i_r] * shiftr
 
     # Calculate rhs
     dhdt = np.zeros_like(rank_2_spatial_tensor)

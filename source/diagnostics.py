@@ -9,9 +9,9 @@ from source.uservariables import *
 from source.fourthorderderivatives import *
 from source.tensoralgebra import *
 from source.mymatter import *
-from source.bssn_rhs import *
 
-# klein gordon eqn
+# The diagnostic function currently just returns the Hamiltonian constraint
+# but this should be updated to include other quantities as required
 def get_diagnostics(solutions_over_time, t, R, N_r) :
 
     start = time.time()
@@ -41,7 +41,7 @@ def get_diagnostics(solutions_over_time, t, R, N_r) :
         
         ################################################################################################
 
-        # get the various derivs that we need to evolve things in vector form
+        # get the various derivs that we need in vector form
         # second derivatives
         d2udx2     = get_d2fdx2(u, oneoverdxsquared)
         d2phidx2   = get_d2fdx2(phi, oneoverdxsquared)
@@ -125,9 +125,6 @@ def get_diagnostics(solutions_over_time, t, R, N_r) :
         
             # Matter sources
             matter_rho            = get_rho( u[ix], dudx[ix], v[ix], bar_gamma_UU, em4phi )
-            matter_Si             = get_Si(  u[ix], dudx[ix], v[ix])
-            matter_S, matter_rSij  = get_rSij( u[ix], dudx[ix], v[ix], r_gamma_UU, em4phi,
-                                               r_gamma_LL)
 
             # End of: Calculate some useful quantities, now start diagnostic
             #################################################################

@@ -29,7 +29,7 @@ def get_rhs(t_i, vars_vec, R, N_r, eta, progress_bar, state) :
     #unpackage the vector for readability - these are the vectors of values across r values at time t_i
     # see uservariables.py for naming conventions
     
-    # Unpack variables
+    # Unpack variables from vars_vec - see uservariables.py
     u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse = unpack_vars_vector(vars_vec, N_r)   
 
     ####################################################################################################
@@ -46,16 +46,14 @@ def get_rhs(t_i, vars_vec, R, N_r, eta, progress_bar, state) :
         h[i_p][i_p] = hpp[ix]
         determinant = abs(get_rescaled_determinant_gamma(h))
         
-        #if(abs(determinant - 1.0) > 1e-5) :
-        #    print("det is", determinant, " at ", r[ix])
-        
         hrr[ix] = (1.0 + hrr[ix])/np.power(determinant,1./3) - 1.0
         htt[ix] = (1.0 + htt[ix])/np.power(determinant,1./3) - 1.0
         hpp[ix] = (1.0 + hpp[ix])/np.power(determinant,1./3) - 1.0
     
     ####################################################################################################
 
-    # get the various derivs that we need to evolve things in vector form
+    # get the various derivs that we need to evolve things in vector form 
+    # - see fourthorderderivatives.py
     
     oneoverdx  = 1.0 / dx
     oneoverdxsquared = oneoverdx * oneoverdx
@@ -137,6 +135,7 @@ def get_rhs(t_i, vars_vec, R, N_r, eta, progress_bar, state) :
     ####################################################################################################    
     
     # now iterate over the grid (vector) and calculate the rhs values
+    # note that we do the ghost cells separately
     for ix in range(num_ghosts, N-num_ghosts) :
 
         # where am I?
@@ -165,10 +164,8 @@ def get_rhs(t_i, vars_vec, R, N_r, eta, progress_bar, state) :
         a[i_p][i_p] = app[ix]
         
         # Calculate some useful quantities
+        # (mostly from tensoralgebra.py)
         ########################################################
-        
-        # \hat \Gamma^i_jk
-        flat_chris = get_flat_spherical_chris(r_here)
         
         # rescaled \bar\gamma_ij and \bar\gamma^ij
         r_gamma_LL = get_rescaled_metric(h)
@@ -185,9 +182,7 @@ def get_rhs(t_i, vars_vec, R, N_r, eta, progress_bar, state) :
 
         # The connections Delta^i, Delta^i_jk and Delta_ijk
         Delta_U, Delta_ULL, Delta_LLL  = get_connection(r_here, bar_gamma_UU, bar_gamma_LL, h, dhdr)
-        #bar_Rij = get_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar[ix], dlambdardx[ix], 
-        #                           Delta_U, Delta_ULL, Delta_LLL, bar_gamma_UU, bar_gamma_LL)
-        rbar_Rij = get_reduced_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar[ix], dlambdardx[ix], 
+        rbar_Rij = get_rescaled_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar[ix], dlambdardx[ix], 
                                    r_gamma_UU, r_gamma_LL)        
 
         # \bar \gamma^i_jk
@@ -197,16 +192,16 @@ def get_rhs(t_i, vars_vec, R, N_r, eta, progress_bar, state) :
         # Use the fact that the conformal metric determinant is \hat \gamma = r^4 sin2theta
         bar_div_shift =  (dshiftrdx[ix] + 2.0 * shiftr[ix] / r_here)
         
-        # Matter sources
-        matter_rho             = get_rho( u[ix], dudx[ix], v[ix], bar_gamma_UU, em4phi )
+        # Matter sources - see mymatter.py
+        matter_rho             = get_rho( u[ix], dudx[ix], v[ix], r_gamma_UU, em4phi )
         matter_Si              = get_Si(  u[ix], dudx[ix], v[ix])
-        matter_S, matter_rSij  = get_rSij( u[ix], dudx[ix], v[ix], r_gamma_UU, em4phi,
+        matter_S, matter_rSij  = get_rescaled_Sij( u[ix], dudx[ix], v[ix], r_gamma_UU, em4phi,
                                              r_gamma_LL)
 
         # End of: Calculate some useful quantities, now start RHS
         #########################################################
 
-        # Get the matter rhs
+        # Get the matter rhs - see mymatter.py
         rhs_u[ix], rhs_v[ix] = get_matter_rhs(u[ix], v[ix], dudx[ix], d2udx2[ix], 
                                               bar_gamma_UU, em4phi, dphidx[ix], 
                                               K[ix], lapse[ix], dlapsedx[ix], conformal_chris)
@@ -214,8 +209,8 @@ def get_rhs(t_i, vars_vec, R, N_r, eta, progress_bar, state) :
         # Get the bssn rhs - see bssn.py
         rhs_phi[ix]     = get_rhs_phi(lapse[ix], K[ix], bar_div_shift)
         
-        rhs_h           = get_rhs_h(r_gamma_LL, lapse[ix], traceA, dshiftrdx[ix], shiftr[ix], 
-                                    bar_div_shift, flat_chris, a)
+        rhs_h           = get_rhs_h(r_here, r_gamma_LL, lapse[ix], traceA, dshiftrdx[ix], shiftr[ix], 
+                                    bar_div_shift, a)
         
         rhs_K[ix]       = get_rhs_K(lapse[ix], K[ix], Asquared, em4phi, d2lapsedx2[ix], dlapsedx[ix], 
                                     conformal_chris, dphidx[ix], bar_gamma_UU, matter_rho, matter_S)
@@ -288,29 +283,9 @@ def get_rhs(t_i, vars_vec, R, N_r, eta, progress_bar, state) :
     # end of rhs iteration over grid points   
     ####################################################################################################        
         
-    #package up the rhs values into a vector like vars_vec for return 
-  
-    # Scalar field vars
-    rhs[idx_u * N : (idx_u + 1) * N] = rhs_u
-    rhs[idx_v * N : (idx_v + 1) * N] = rhs_v
-    
-    # Conformal factor and rescaled perturbation to spatial metric
-    rhs[idx_phi * N : (idx_phi + 1) * N] = rhs_phi
-    rhs[idx_hrr * N : (idx_hrr + 1) * N] = rhs_hrr
-    rhs[idx_htt * N : (idx_htt + 1) * N] = rhs_htt
-    rhs[idx_hpp * N : (idx_hpp + 1) * N] = rhs_hpp
-
-    # Mean curvature and rescaled perturbation to traceless A_ij
-    rhs[idx_K   * N : (idx_K   + 1) * N] = rhs_K
-    rhs[idx_arr * N : (idx_arr + 1) * N] = rhs_arr
-    rhs[idx_att * N : (idx_att + 1) * N] = rhs_att
-    rhs[idx_app * N : (idx_app + 1) * N] = rhs_app
-
-    # Gamma^x, shift and lapse
-    rhs[idx_lambdar * N : (idx_lambdar + 1) * N] = rhs_lambdar
-    rhs[idx_shiftr  * N : (idx_shiftr  + 1) * N] = rhs_shiftr
-    rhs[idx_br      * N : (idx_br      + 1) * N] = rhs_br
-    rhs[idx_lapse   * N : (idx_lapse   + 1) * N] = rhs_lapse
+    #package up the rhs values into a vector rhs (like vars_vec) for return - see uservariables.py
+    pack_vars_vector(rhs, N_r, rhs_u, rhs_v , rhs_phi, rhs_hrr, rhs_htt, rhs_hpp, 
+                     rhs_K, rhs_arr, rhs_att, rhs_app, rhs_lambdar, rhs_shiftr, rhs_br, rhs_lapse)
 
     #################################################################################################### 
             
@@ -326,7 +301,7 @@ def get_rhs(t_i, vars_vec, R, N_r, eta, progress_bar, state) :
     
     #################################################################################################### 
         
-    # overwrite outer boundaries with extrapolation (order specified in uservariables)
+    # overwrite outer boundaries with extrapolation (order specified in uservariables.py)
     for ivar in range(0, NUM_VARS) :
         boundary_cells = np.array([(ivar + 1)*N-3, (ivar + 1)*N-2, (ivar + 1)*N-1])
         var_asymptotic_power = asymptotic_power[ivar]
