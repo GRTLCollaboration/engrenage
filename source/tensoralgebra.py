@@ -1,5 +1,8 @@
 #tensoralgebra.py
 
+# This file contains useful tensor algebra functions that are used in the RHS evolution
+# and diagnostics etc
+
 import numpy as np
 
 # The flat spherical coordinate quantities as in arXiv:1211.6632
@@ -54,9 +57,37 @@ def get_flat_spherical_chris(r_here) :
     
     return spherical_chris
 
+# flat spherical christoffel symbols rescaled for r^2 factors 
+# (as if they were tensors) as in Baumgarte https://arxiv.org/abs/1211.6632
+def get_rescaled_flat_spherical_chris(r_here) :
+
+    spherical_chris = np.zeros_like(rank_3_spatial_tensor)
+    one_over_r = 1.0 / r_here
+    
+    # non zero r comps \Gamma^r_ab
+    spherical_chris[i_r][i_t][i_t] = - one_over_r
+    spherical_chris[i_r][i_p][i_p] = - one_over_r
+    
+    # non zero theta comps \Gamma^theta_ab
+    spherical_chris[i_t][i_p][i_p] = - costheta * one_over_r 
+    spherical_chris[i_t][i_r][i_t] = one_over_r
+    spherical_chris[i_t][i_t][i_r] = one_over_r
+
+    # non zero theta comps \Gamma^phi_ab
+    spherical_chris[i_p][i_p][i_r] = one_over_r
+    spherical_chris[i_p][i_r][i_p] = one_over_r
+    spherical_chris[i_p][i_t][i_p] = costheta / sintheta * one_over_r
+    spherical_chris[i_p][i_p][i_t] = costheta / sintheta * one_over_r
+    
+    return spherical_chris
+
 def get_conformal_chris(Delta_ULL, r_here) :
 
     return get_flat_spherical_chris(r_here) + Delta_ULL
+
+def get_rescaled_conformal_chris(rDelta_ULL, r_here) :
+
+    return get_rescaled_flat_spherical_chris(r_here) + rDelta_ULL
     
 # Compute determinant of conformal spatial metric \bar\gamma divided by r^4 sin^2 theta
 def get_rescaled_determinant_gamma(h) :
@@ -78,7 +109,7 @@ def get_metric(r_here, h) :
     
     return gamma_LL
 
-# Computer the scaled spatial metric inv_scaling_ij * \bar \gamma_ij given the rescaled perturbation h
+# Computer the rescaled spatial metric inv_scaling_ij * \bar \gamma_ij given the rescaled perturbation h
 def get_rescaled_metric(h) :   
     
     r_gamma_LL = np.zeros_like(rank_2_spatial_tensor)   
@@ -132,6 +163,18 @@ def get_A_UU(a, r_gamma_UU, r_here):
     
     return np.diag( inv_scaling * inv_scaling * np.diag(a_UU) )
 
+# Compute a^ij given a_ij
+def get_a_UU(a, r_gamma_UU):
+    
+    # Note that bar_gamma_UU is symmetric.
+    # If it wasn't symmetric, we would need to be careful about
+    # transposing when multiplying from the right.
+    # multi_dot is kind of overkill here for 3x3 matrices...
+    # but it's good to know about!
+    a_UU = np.linalg.multi_dot( [ r_gamma_UU, a, r_gamma_UU ] ) 
+    
+    return a_UU
+
 # Compute trace of (traceless part of) extrinsic curvature
 def get_trace_A(a, r_gamma_UU) :
 
@@ -159,15 +202,15 @@ def get_Asquared(a, r_gamma_UU) :
 
 # Compute connection of the spatial metric
 # See eqn (23)-(24) in Baumgarte https://arxiv.org/abs/1211.6632
-# \Delta \Gamma^i_{jk} \equiv \bar \Gamma^i_{jk} - \Gamma0^i_{jk}
-#                     = (1/2) * \bar \gamma^{il} ( D_j \bar \gamma_{kl} + D_k \bar \gamma_{jl} - D_l \bar \gamma_{jk} )
-#                     = (1/2) * \bar \gamma^{il} ( D_j \epsilon_{kl} + D_k \epsilon_{jl} - D_l \epsilon_{jk} )
-# where D_i is the covariant derivative associated with the flat metric \eta_{ij}.
+# \Delta^i_{jk} \equiv \bar \Gamma^i_{jk} - \Gamma0^i_{jk}
+#               = (1/2) * \bar \gamma^{il} ( hat D_j \bar \gamma_{kl} + hat D_k \bar \gamma_{jl} - hat D_l \bar \gamma_{jk} )
+#               = (1/2) * \bar \gamma^{il} ( hat D_j \epsilon_{kl} + hat D_k \epsilon_{jl} - hat D_l \epsilon_{jk} )
+# where hat D_i is the covariant derivative associated with the flat metric \eta_{ij}.
 def get_connection(r_here, bar_gamma_UU, bar_gamma_LL, h, dhdr) :
     
     Delta_ULL = np.zeros_like(rank_3_spatial_tensor)
     Delta_LLL = np.zeros_like(rank_3_spatial_tensor)
-    hat_D_bar_gamma = get_metric_deriv(r_here, h, dhdr)
+    hat_D_bar_gamma = get_hat_D_bar_gamma(r_here, h, dhdr)
     
     for i in range(0, SPACEDIM):
         for j in range(0, SPACEDIM):    
@@ -187,6 +230,37 @@ def get_connection(r_here, bar_gamma_UU, bar_gamma_LL, h, dhdr) :
                     Delta_LLL[i][j][k] += bar_gamma_LL[i][m] * Delta_ULL[m][j][k]
     
     return Delta_U, Delta_ULL, Delta_LLL
+
+# Compute rescaled connection of the spatial metric
+# See eqn (23)-(24) in Baumgarte https://arxiv.org/abs/1211.6632
+# \Delta^i_{jk} \equiv \bar \Gamma^i_{jk} - \Gamma0^i_{jk}
+#               = (1/2) * \bar \gamma^{il} ( hat D_j \bar \gamma_{kl} + hat D_k \bar \gamma_{jl} - hat D_l \bar \gamma_{jk} )
+#               = (1/2) * \bar \gamma^{il} ( hat D_j \epsilon_{kl} + hat D_k \epsilon_{jl} - hat D_l \epsilon_{jk} )
+# where hat D_i is the covariant derivative associated with the flat metric \eta_{ij}.
+def get_rescaled_connection(r_here, r_gamma_UU, r_gamma_LL, h, dhdr) :
+    
+    rDelta_ULL = np.zeros_like(rank_3_spatial_tensor)
+    rDelta_LLL = np.zeros_like(rank_3_spatial_tensor)
+    rhat_D_bar_gamma = get_rescaled_hat_D_bar_gamma(r_here, h, dhdr)
+    
+    for i in range(0, SPACEDIM):
+        for j in range(0, SPACEDIM):    
+            for k in range(0, SPACEDIM):
+                for m in range(0, SPACEDIM):
+                    rDelta_ULL[i][j][k] += 0.5 * r_gamma_UU[i][m] * (  rhat_D_bar_gamma[j][k][m] 
+                                                                     + rhat_D_bar_gamma[k][j][m] 
+                                                                     - rhat_D_bar_gamma[m][j][k])
+                    
+    rDelta_U =  np.zeros_like(rank_1_spatial_tensor)           
+    for i in range(0, SPACEDIM):
+        for j in range(0, SPACEDIM):    
+            for k in range(0, SPACEDIM):
+                rDelta_U[k] += r_gamma_UU[i][j] * rDelta_ULL[k][i][j]
+                
+                for m in range(0, SPACEDIM):
+                    rDelta_LLL[i][j][k] += r_gamma_LL[i][m] * rDelta_ULL[m][j][k]
+    
+    return rDelta_U, rDelta_ULL, rDelta_LLL
 
 # Compute the Ricci tensor
 # See eqn (12) in Baumgarte https://arxiv.org/abs/1211.6632
@@ -222,6 +296,40 @@ def get_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar, dlambardr,
             
     return ricci
 
+# Compute the rescaled Ricci tensor
+# See eqn (12) in Baumgarte https://arxiv.org/abs/1211.6632
+def get_rescaled_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar, dlambardr,
+                              rDelta_U, rDelta_ULL, rDelta_LLL, 
+                              r_gamma_UU, r_gamma_LL) :
+
+    r_ricci = np.zeros_like(rank_2_spatial_tensor)
+    
+    # Get \hat D \Lambda^i
+    rhat_D_Lambda = get_rescaled_hat_D_Lambda(r_here, lambdar, dlambardr)
+    # Get \bar\gamma^kl \hat D_k \hat D_l \bar\gamma_ij
+    rhat_D2_bar_gamma = get_rescaled_hat_D2_bar_gamma(r_here, h, dhdr, d2hdr2, r_gamma_UU)
+    
+    for i in range(0, SPACEDIM):
+        for j in range(0, SPACEDIM):
+            r_ricci[i][j] += -0.5 * rhat_D2_bar_gamma[i][j]
+                
+            for k in range(0, SPACEDIM):
+                r_ricci[i][j] += (   0.5 * (r_gamma_LL[k][i] * rhat_D_Lambda[j][k] + 
+                                          r_gamma_LL[k][j] * rhat_D_Lambda[i][k])
+                                   + 0.5 * (rDelta_U[k] * rDelta_LLL[i][j][k]  + 
+                                          rDelta_U[k] * rDelta_LLL[j][i][k]) )
+                
+                for l in range(0, SPACEDIM):
+                    for m in range(0, SPACEDIM): 
+                        r_ricci[i][j] += r_gamma_UU[k][l] * (  rDelta_ULL[m][k][i] * 
+                                                               rDelta_LLL[j][m][l]
+                                                             + rDelta_ULL[m][k][j] * 
+                                                               rDelta_LLL[i][m][l]
+                                                             + rDelta_ULL[m][i][k] * 
+                                                               rDelta_LLL[m][j][l] )
+            
+    return r_ricci
+
 # \hat D_i \Lambda^j
 # See eqn (26) in Baumgarte https://arxiv.org/abs/1211.6632
 def get_hat_D_Lambda(r_here, lambdar, dlambardr) :
@@ -230,17 +338,31 @@ def get_hat_D_Lambda(r_here, lambdar, dlambardr) :
     hat_D_Lambda = np.zeros_like(rank_2_spatial_tensor)
     
     # Useful quantities
-    chris = get_flat_spherical_chris(r_here)
-    Lambda = np.zeros_like(rank_1_spatial_tensor)
-    Lambda[i_r] = lambdar
+    flat_chris = get_flat_spherical_chris(r_here)
 
     hat_D_Lambda[i_r][i_r] = dlambardr
     for i in range(0, SPACEDIM):
-        for j in range(0, SPACEDIM):  
-            for k in range(0, SPACEDIM): 
-                hat_D_Lambda[i][j] += chris[j][i][k] * Lambda[k]
+        for j in range(0, SPACEDIM):
+            hat_D_Lambda[i][j] += flat_chris[j][i][i_r] * lambdar
                 
     return hat_D_Lambda
+
+# \hat D_i \Lambda^j
+# See eqn (26) in Baumgarte https://arxiv.org/abs/1211.6632
+def get_rescaled_hat_D_Lambda(r_here, lambdar, dlambardr) :
+    
+    # Make an array for \hat D_i \Lambda^j
+    rhat_D_Lambda = np.zeros_like(rank_2_spatial_tensor)
+    
+    # Useful quantities
+    rflat_chris = get_rescaled_flat_spherical_chris(r_here)
+
+    rhat_D_Lambda[i_r][i_r] = dlambardr
+    for i in range(0, SPACEDIM):
+        for j in range(0, SPACEDIM):
+            rhat_D_Lambda[i][j] += rflat_chris[j][i][i_r] * lambdar
+                
+    return rhat_D_Lambda
 
 # \bar|gamma^kl \hat D_k \hat D_l \bar\gamma_ij 
 # See eqn (27) in Baumgarte https://arxiv.org/abs/1211.6632
@@ -249,8 +371,8 @@ def get_hat_D2_bar_gamma(r_here, h, dhdr, d2hdr2, bar_gamma_UU) :
     hat_D2_bar_gamma = np.zeros_like(rank_2_spatial_tensor)
 
     # Useful quantities
-    hat_D_bar_gamma = get_metric_deriv(r_here, h, dhdr)
-    chris = get_flat_spherical_chris(r_here)
+    hat_D_bar_gamma = get_hat_D_bar_gamma(r_here, h, dhdr)
+    flat_chris = get_flat_spherical_chris(r_here)
     r2 = r_here * r_here
     r2sin2theta = r2 * sin2theta
     
@@ -268,11 +390,48 @@ def get_hat_D2_bar_gamma(r_here, h, dhdr, d2hdr2, bar_gamma_UU) :
             for k in range(0, SPACEDIM): 
                 for l in range(0, SPACEDIM):  
                     for m in range(0, SPACEDIM): 
-                        hat_D2_bar_gamma[i][j] += - bar_gamma_UU[k][l] * (  hat_D_bar_gamma[m][i][j] * chris[m][l][k]
-                                                                          + hat_D_bar_gamma[l][m][j] * chris[m][i][k]
-                                                                          + hat_D_bar_gamma[l][i][m] * chris[m][j][k] )
+                        hat_D2_bar_gamma[i][j] += - bar_gamma_UU[k][l] * (  hat_D_bar_gamma[m][i][j] * flat_chris[m][l][k]
+                                                                          + hat_D_bar_gamma[l][m][j] * flat_chris[m][i][k]
+                                                                          + hat_D_bar_gamma[l][i][m] * flat_chris[m][j][k] )
                                                                         
                 
+    return hat_D2_bar_gamma
+
+# \bar|gamma^kl \hat D_k \hat D_l \bar\gamma_ij 
+# See eqn (27) in Baumgarte https://arxiv.org/abs/1211.6632
+def get_rescaled_hat_D2_bar_gamma(r_here, h, dhdr, d2hdr2, r_gamma_UU) :
+    
+    hat_D2_bar_gamma = np.zeros_like(rank_2_spatial_tensor)
+
+    # Useful quantities
+    one_over_r = 1.0 / r_here
+    hat_D_bar_gamma = get_rescaled_hat_D_bar_gamma(r_here, h, dhdr)
+    rflat_chris = get_rescaled_flat_spherical_chris(r_here)
+    
+    # explicitly add non zero terms in spherical symmetry
+    hat_D2_bar_gamma[i_r][i_r] = r_gamma_UU[i_r][i_r] *   d2hdr2[i_r][i_r]
+    
+    hat_D2_bar_gamma[i_t][i_t] = r_gamma_UU[i_r][i_r] * ( d2hdr2[i_t][i_t]
+                                                            + dhdr[i_t][i_t] * 2.0 * one_over_r )
+    hat_D2_bar_gamma[i_p][i_p] = r_gamma_UU[i_r][i_r] * ( d2hdr2[i_p][i_p]
+                                                            + dhdr[i_p][i_p] * 2.0 * one_over_r )
+
+    # now add the christoffel terms
+    for i in range(0, SPACEDIM):
+        for j in range(0, SPACEDIM): 
+            hat_D2_bar_gamma[i][j] += (r_gamma_UU[i_t][i_t] * hat_D_bar_gamma[i_r][i][j] * one_over_r +
+                                       r_gamma_UU[i_p][i_p] * hat_D_bar_gamma[i_r][i][j] * one_over_r * sin2theta)
+    
+    hat_D2_bar_gamma[i_r][i_r] += - 2.0 * (r_gamma_UU[i_t][i_t] * hat_D_bar_gamma[i_t][i_t][i_r] * one_over_r
+                                           + r_gamma_UU[i_p][i_p] * hat_D_bar_gamma[i_p][i_p][i_r] * one_over_r)
+    
+    hat_D2_bar_gamma[i_t][i_t] += - 2.0 * (r_gamma_UU[i_r][i_r] * hat_D_bar_gamma[i_r][i_t][i_t] * one_over_r
+                                             - r_gamma_UU[i_t][i_t] * hat_D_bar_gamma[i_t][i_r][i_t] * one_over_r)
+    
+    hat_D2_bar_gamma[i_p][i_p] += - 2.0 * (r_gamma_UU[i_r][i_r] * hat_D_bar_gamma[i_r][i_p][i_p] * one_over_r
+                                             - r_gamma_UU[i_p][i_p] * hat_D_bar_gamma[i_p][i_r][i_p] * one_over_r * sin2theta)
+    
+    
     return hat_D2_bar_gamma
 
 # We split the conformal metric into the form
@@ -287,7 +446,7 @@ def get_hat_D2_bar_gamma(r_here, h, dhdr, d2hdr2, bar_gamma_UU) :
 # Covariant derivative of the spatial metric \hat{D} \bar{\gamma}_{ij} with 
 # respect to the flat metric in spherical polar coordinates
 # See eqn (25) in Baumgarte https://arxiv.org/abs/1211.6632
-def get_metric_deriv(r_here, h, dhdr) :
+def get_hat_D_bar_gamma(r_here, h, dhdr) :
 
     hat_D_epsilon = np.zeros_like(rank_3_spatial_tensor)
     
@@ -339,6 +498,61 @@ def get_metric_deriv(r_here, h, dhdr) :
 
     hat_D_epsilon[i_p, i_t, i_p ] += scaling[i_t] * scaling[i_p] * ( sintheta * h[i_r][i_t]                                                                                  + costheta * h[i_t][i_t]
                                                                    - costheta * h[i_p][i_p] )
+    hat_D_epsilon[i_p, i_p, i_t ] = hat_D_epsilon[i_p, i_t, i_p]
+            
+    return hat_D_epsilon
+
+# Covariant derivative of the spatial metric \hat{D} \bar{\gamma}_{ij} with 
+# respect to the flat metric in spherical polar coordinates
+# (Here we simplified for spherical symmetry, unlike above in the un-rescaled case which is general)
+# See eqn (25) in Baumgarte https://arxiv.org/abs/1211.6632
+def get_rescaled_hat_D_bar_gamma(r_here, h, dhdr) :
+
+    hat_D_epsilon = np.zeros_like(rank_3_spatial_tensor)
+    
+    # assume spherical symmetry
+    dhdtheta = np.zeros_like(dhdr)
+    dhdphi = np.zeros_like(dhdr)
+    
+    # some useful quantities
+    r2 = r_here * r_here
+    scaling = np.array([1.0, r_here , r_here*sintheta])
+    
+    # Fill derivatives \hat D_k epsilon_ij
+    for i in range(0, SPACEDIM):
+        for j in range(0, SPACEDIM):
+            hat_D_epsilon[i_r, i, j]   = dhdr[i][j]
+            hat_D_epsilon[i_t, i, j]   = 0.0
+            hat_D_epsilon[i_p, i, j]   = 0.0
+            
+    # Add additional terms from christoffels etc
+    
+    # d/dtheta
+    hat_D_epsilon[i_t, i_r, i_r ] +=   0.0
+    hat_D_epsilon[i_t, i_t, i_t ] +=   0.0
+    hat_D_epsilon[i_t, i_p, i_p ] +=   0.0
+    
+    hat_D_epsilon[i_t, i_r, i_t ] += (  h[i_r][i_r] - h[i_t][i_t] ) / scaling[i_t]
+    hat_D_epsilon[i_t, i_t, i_r ] = hat_D_epsilon[i_t, i_r, i_t] 
+    
+    hat_D_epsilon[i_t, i_r, i_p ] += 0.0
+    hat_D_epsilon[i_t, i_p, i_r ] = hat_D_epsilon[i_t, i_r, i_p]
+
+    hat_D_epsilon[i_t, i_t, i_p ] += 0.0
+    hat_D_epsilon[i_t, i_p, i_t ] = hat_D_epsilon[i_t, i_t, i_p]
+    
+    # d/dphi
+    hat_D_epsilon[i_p, i_r, i_r ] += 0.0
+    hat_D_epsilon[i_p, i_t, i_t ] += 0.0
+    hat_D_epsilon[i_p, i_p, i_p ] += 0.0
+    
+    hat_D_epsilon[i_p, i_r, i_t ] += 0.0
+    hat_D_epsilon[i_p, i_t, i_r ] = hat_D_epsilon[i_p, i_r, i_t] 
+    
+    hat_D_epsilon[i_p, i_r, i_p ] += ( sintheta * h[i_r][i_r] - sintheta * h[i_p][i_p] ) / scaling[i_p]
+    hat_D_epsilon[i_p, i_p, i_r ] = hat_D_epsilon[i_p, i_r, i_p]
+
+    hat_D_epsilon[i_p, i_t, i_p ] += 0.0
     hat_D_epsilon[i_p, i_p, i_t ] = hat_D_epsilon[i_p, i_t, i_p]
             
     return hat_D_epsilon

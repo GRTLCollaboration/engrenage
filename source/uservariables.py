@@ -62,3 +62,31 @@ def unpack_vars_vector(vars_vec, N_r) :
     lapse      = vars_vec[idx_lapse   * domain_length : (idx_lapse   + 1) * domain_length]    
     
     return u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse
+
+def pack_vars_vector(vars_vec, N_r, u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse) :
+    
+    domain_length = N_r + 2 * num_ghosts
+    
+    #package up the rhs values into a vector like vars_vec for return 
+  
+    # Scalar field vars
+    vars_vec[idx_u * domain_length : (idx_u + 1) * domain_length] = u
+    vars_vec[idx_v * domain_length : (idx_v + 1) * domain_length] = v
+    
+    # Conformal factor and rescaled perturbation to spatial metric
+    vars_vec[idx_phi * domain_length : (idx_phi + 1) * domain_length] = phi
+    vars_vec[idx_hrr * domain_length : (idx_hrr + 1) * domain_length] = hrr
+    vars_vec[idx_htt * domain_length : (idx_htt + 1) * domain_length] = htt
+    vars_vec[idx_hpp * domain_length : (idx_hpp + 1) * domain_length] = hpp
+
+    # Mean curvature and rescaled perturbation to traceless A_ij
+    vars_vec[idx_K   * domain_length : (idx_K   + 1) * domain_length] = K
+    vars_vec[idx_arr * domain_length : (idx_arr + 1) * domain_length] = arr
+    vars_vec[idx_att * domain_length : (idx_att + 1) * domain_length] = att
+    vars_vec[idx_app * domain_length : (idx_app + 1) * domain_length] = app
+
+    # Gamma^x, shift and lapse
+    vars_vec[idx_lambdar * domain_length : (idx_lambdar + 1) * domain_length] = lambdar
+    vars_vec[idx_shiftr  * domain_length : (idx_shiftr  + 1) * domain_length] = shiftr
+    vars_vec[idx_br      * domain_length : (idx_br      + 1) * domain_length] = br
+    vars_vec[idx_lapse   * domain_length : (idx_lapse   + 1) * domain_length] = lapse

@@ -20,9 +20,9 @@ def get_initial_vars_values(R, N_r) :
     initial_vars_values = np.zeros(NUM_VARS * N)
     
     # Use oscilloton data to construct functions for the vars
-    grr0_data    = np.loadtxt("source/initial_data/grr0.csv")
-    lapse0_data  = np.loadtxt("source/initial_data/lapse0.csv")
-    v0_data      = np.loadtxt("source/initial_data/v0.csv")
+    grr0_data    = np.loadtxt("../source/initial_data/grr0.csv")
+    lapse0_data  = np.loadtxt("../source/initial_data/lapse0.csv")
+    v0_data      = np.loadtxt("../source/initial_data/v0.csv")
     
     # set up grid in radial direction in areal polar coordinates
     dR = 0.01;
@@ -32,7 +32,8 @@ def get_initial_vars_values(R, N_r) :
     f_lapse = interp1d(R, lapse0_data)
     f_v     = interp1d(R, v0_data)
     
-    for ix in range(num_ghosts, N-num_ghosts) :
+    # fill all positive values of r
+    for ix in range(num_ghosts, N) :
 
         # position on the grid
         r_i = r[ix]
@@ -55,19 +56,8 @@ def get_initial_vars_values(R, N_r) :
         initial_vars_values[ix + idx_phi * N]   = phi_here
         em4phi = np.exp(-4.0*phi_here)
         initial_vars_values[ix + idx_hrr * N]   = em4phi * grr_here - 1
-        initial_vars_values[ix + idx_htt * N]      = em4phi * gtt_over_r2 - 1.0
-        initial_vars_values[ix + idx_hpp * N]      = em4phi * gpp_over_r2sintheta - 1.0
-        
-    # overwrite outer boundaries with extrapolation (order specified in uservariables)
-    for ivar in range(0, NUM_VARS) :
-        boundary_cells = np.array([(ivar + 1)*N-3, (ivar + 1)*N-2, (ivar + 1)*N-1])
-        var_asymptotic_power = asymptotic_power[ivar]
-        for count, ix in enumerate(boundary_cells) :
-            offset = -1 - count
-            initial_vars_values[ix]    = initial_vars_values[ix + offset] * (r[N - 3 + count] / r[N - 4])**var_asymptotic_power
-            if (ivar == idx_lapse) :
-                initial_vars_values[ix]    = 1.0 - ((1.0 - initial_vars_values[ix + offset]) 
-                                                    * (r[N - 3 + count] / r[N - 4])**var_asymptotic_power)
+        initial_vars_values[ix + idx_htt * N]   = em4phi * gtt_over_r2 - 1.0
+        initial_vars_values[ix + idx_hpp * N]   = em4phi * gpp_over_r2sintheta - 1.0
 
     # overwrite inner cells using parity under r -> - r
     for ivar in range(0, NUM_VARS) :
