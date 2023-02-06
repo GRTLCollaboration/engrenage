@@ -40,7 +40,8 @@ def get_initial_vars_values(R, N_r) :
         phys_gamma_over_r4sin2theta = grr * gtt_over_r2 * gpp_over_r2sintheta
         # Note sign error in Baumgarte eqn (2) 
         phi_here = 1.0/12.0 * np.log(phys_gamma_over_r4sin2theta)
-        initial_vars_values[ix + idx_phi * N]   = phi_here
+        # Cap the phi value in the centre to stop unphysically large numbers at singularity
+        initial_vars_values[ix + idx_phi * N]   = np.min([phi_here, 2.0])
         em4phi = np.exp(-4.0*phi_here)
         initial_vars_values[ix + idx_hrr * N]      = em4phi * grr - 1
         initial_vars_values[ix + idx_htt * N]      = em4phi * gtt_over_r2 - 1.0

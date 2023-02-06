@@ -251,7 +251,7 @@ def get_rhs(t_i, vars_vec, R, N_r, eta, progress_bar, state) :
             rhs_lambdar[ix] += (shiftr[ix] * dlambdardx_advec_R[ix] 
                                 - lambdar[ix] * dshiftrdx[ix])
             # NB optional to add advection to lapse and shift vars
-            # rhs_lapse       += shiftr[ix] * dlapsedx_advec_R[ix]
+            rhs_lapse       += shiftr[ix] * dlapsedx_advec_R[ix]
             # rhs_br[ix]      += 0.0
             # rhs_shiftr[ix]  += 0.0
             
@@ -275,7 +275,7 @@ def get_rhs(t_i, vars_vec, R, N_r, eta, progress_bar, state) :
             rhs_lambdar[ix] += (shiftr[ix] * dlambdardx_advec_L[ix] 
                                 - lambdar[ix] * dshiftrdx[ix])
             # NB optional to add advection to lapse and shift vars
-            # rhs_lapse       += shiftr[ix] * dlapsedx_advec_L[ix]            
+            rhs_lapse       += shiftr[ix] * dlapsedx_advec_L[ix]            
             # rhs_br[ix]      += 0.0
             # rhs_shiftr[ix]  += 0.0
         
