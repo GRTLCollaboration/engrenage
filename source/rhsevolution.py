@@ -7,20 +7,41 @@ import time
 # homemade code
 from source.uservariables import *
 from source.fourthorderderivatives import *
+from source.logderivatives import *
 from source.tensoralgebra import *
 from source.mymatter import *
 from source.bssn_rhs import *
     
 # function that returns the rhs for each of the field vars
-def get_rhs(t_i, vars_vec, R, N_r, eta, progress_bar, state) :
+def get_rhs(t_i, vars_vec, R, N_r, r_is_logarithmic, eta, progress_bar, state) :
 
     # Some functions for timing and tracking progress
     start = time.time()
     
     # Set up grid values
     dx = R/N_r
+    oneoverdx  = 1.0 / dx
+    oneoverdxsquared = oneoverdx * oneoverdx
     N = N_r + num_ghosts * 2 
     r = np.linspace(-(num_ghosts-0.5)*dx, R+(num_ghosts-0.5)*dx, N)
+    logarithmic_dr = np.ones_like(r)
+
+    if (r_is_logarithmic) :
+        # overwrite grid values for logarithmic grid
+        logarithmic_dr[num_ghosts] = dx
+        logarithmic_dr[num_ghosts-1] = logarithmic_dr[num_ghosts]/c
+        logarithmic_dr[num_ghosts-2] = logarithmic_dr[num_ghosts-1]/c
+        logarithmic_dr[num_ghosts-2] = logarithmic_dr[num_ghosts-2]/c        
+        r[num_ghosts] = dx / 2.0
+        r[num_ghosts - 1] = - dx / 2.0
+        r[num_ghosts - 2] = r[num_ghosts - 1] - dx / 2.0 / c
+        r[num_ghosts - 3] = r[num_ghosts - 2] - dx / 2.0 / c / c
+        for idx in np.arange(num_ghosts, N, 1) :
+            logarithmic_dr[idx] = logarithmic_dr[idx-1] * c
+            r[idx] = r[idx-1] + logarithmic_dr[idx]    
+
+    oneoverlogdr = 1.0 / logarithmic_dr
+    oneoverlogdr2 = oneoverlogdr * oneoverlogdr
     
     # this is where the rhs will go
     rhs = np.zeros_like(vars_vec) 
@@ -54,65 +75,121 @@ def get_rhs(t_i, vars_vec, R, N_r, eta, progress_bar, state) :
 
     # get the various derivs that we need to evolve things in vector form 
     # - see fourthorderderivatives.py
-    
-    oneoverdx  = 1.0 / dx
-    oneoverdxsquared = oneoverdx * oneoverdx
-    
-    # second derivatives
-    d2udx2     = get_d2fdx2(u, oneoverdxsquared)
-    d2phidx2   = get_d2fdx2(phi, oneoverdxsquared)
-    d2hrrdx2   = get_d2fdx2(hrr, oneoverdxsquared)
-    d2httdx2   = get_d2fdx2(htt, oneoverdxsquared)
-    d2hppdx2   = get_d2fdx2(hpp, oneoverdxsquared)
-    d2lapsedx2 = get_d2fdx2(lapse, oneoverdxsquared)
-    d2shiftrdx2 = get_d2fdx2(shiftr, oneoverdxsquared)
+    if(r_is_logarithmic) : #take logarithmic derivatives
+        
+        # second derivatives
+        d2udx2     = get_logd2fdx2(u, oneoverlogdr2)
+        d2phidx2   = get_logd2fdx2(phi, oneoverlogdr2)
+        d2hrrdx2   = get_logd2fdx2(hrr, oneoverlogdr2)
+        d2httdx2   = get_logd2fdx2(htt, oneoverlogdr2)
+        d2hppdx2   = get_logd2fdx2(hpp, oneoverlogdr2)    
+        d2lapsedx2   = get_logd2fdx2(lapse, oneoverlogdr2) 
+        d2shiftrdx2   = get_logd2fdx2(shiftr, oneoverlogdr2) 
+        
+        # first derivatives        
+        dudx       = get_logdfdx(u, oneoverlogdr)
+        dvdx       = get_logdfdx(v, oneoverlogdr)
+        dphidx     = get_logdfdx(phi, oneoverlogdr)
+        dhrrdx     = get_logdfdx(hrr, oneoverlogdr)
+        dhttdx     = get_logdfdx(htt, oneoverlogdr)
+        dhppdx     = get_logdfdx(hpp, oneoverlogdr)
+        darrdx     = get_logdfdx(arr, oneoverlogdr)
+        dattdx     = get_logdfdx(att, oneoverlogdr)
+        dappdx     = get_logdfdx(app, oneoverlogdr)
+        dKdx       = get_logdfdx(K, oneoverlogdr)
+        dlambdardx = get_logdfdx(lambdar, oneoverlogdr)
+        dbrdx      = get_logdfdx(br, oneoverlogdr)
+        dshiftrdx  = get_logdfdx(shiftr, oneoverlogdr)
+        dlapsedx   = get_logdfdx(lapse, oneoverlogdr)
 
-    # first derivatives
-    dudx       = get_dfdx(u, oneoverdx)
-    dvdx       = get_dfdx(v, oneoverdx)
-    dphidx     = get_dfdx(phi, oneoverdx)
-    dhrrdx     = get_dfdx(hrr, oneoverdx)
-    dhttdx     = get_dfdx(htt, oneoverdx)
-    dhppdx     = get_dfdx(hpp, oneoverdx)
-    darrdx     = get_dfdx(arr, oneoverdx)
-    dattdx     = get_dfdx(att, oneoverdx)
-    dappdx     = get_dfdx(app, oneoverdx)
-    dKdx       = get_dfdx(K, oneoverdx)
-    dlambdardx = get_dfdx(lambdar, oneoverdx)
-    dshiftrdx  = get_dfdx(shiftr, oneoverdx)
-    dbrdx      = get_dfdx(br, oneoverdx)
-    dlapsedx   = get_dfdx(lapse, oneoverdx)
+        # first derivatives - advec left and right
+        dudx_advec_L       = get_logdfdx_advec_L(u, oneoverlogdr)
+        dvdx_advec_L       = get_logdfdx_advec_L(v, oneoverlogdr)
+        dphidx_advec_L     = get_logdfdx_advec_L(phi, oneoverlogdr)
+        dhrrdx_advec_L     = get_logdfdx_advec_L(hrr, oneoverlogdr)
+        dhttdx_advec_L     = get_logdfdx_advec_L(htt, oneoverlogdr)
+        dhppdx_advec_L     = get_logdfdx_advec_L(hpp, oneoverlogdr)
+        darrdx_advec_L     = get_logdfdx_advec_L(arr, oneoverlogdr)
+        dattdx_advec_L     = get_logdfdx_advec_L(att, oneoverlogdr)
+        dappdx_advec_L     = get_logdfdx_advec_L(app, oneoverlogdr)
+        dKdx_advec_L       = get_logdfdx_advec_L(K, oneoverlogdr)
+        dlambdardx_advec_L = get_logdfdx_advec_L(lambdar, oneoverlogdr)
+        dshiftrdx_advec_L  = get_logdfdx_advec_L(shiftr, oneoverlogdr)
+        dbrdx_advec_L      = get_logdfdx_advec_L(br, oneoverlogdr)
+        dlapsedx_advec_L   = get_logdfdx_advec_L(lapse, oneoverlogdr)
     
-    # first derivatives - advec left and right
-    dudx_advec_L       = get_dfdx_advec_L(u, oneoverdx)
-    dvdx_advec_L       = get_dfdx_advec_L(v, oneoverdx)
-    dphidx_advec_L     = get_dfdx_advec_L(phi, oneoverdx)
-    dhrrdx_advec_L     = get_dfdx_advec_L(hrr, oneoverdx)
-    dhttdx_advec_L     = get_dfdx_advec_L(htt, oneoverdx)
-    dhppdx_advec_L     = get_dfdx_advec_L(hpp, oneoverdx)
-    darrdx_advec_L     = get_dfdx_advec_L(arr, oneoverdx)
-    dattdx_advec_L     = get_dfdx_advec_L(att, oneoverdx)
-    dappdx_advec_L     = get_dfdx_advec_L(app, oneoverdx)
-    dKdx_advec_L       = get_dfdx_advec_L(K, oneoverdx)
-    dlambdardx_advec_L = get_dfdx_advec_L(lambdar, oneoverdx)
-    dshiftrdx_advec_L  = get_dfdx_advec_L(shiftr, oneoverdx)
-    dbrdx_advec_L      = get_dfdx_advec_L(br, oneoverdx)
-    dlapsedx_advec_L   = get_dfdx_advec_L(lapse, oneoverdx)
+        dudx_advec_R       = get_logdfdx_advec_R(u, oneoverlogdr)
+        dvdx_advec_R       = get_logdfdx_advec_R(v, oneoverlogdr)
+        dphidx_advec_R     = get_logdfdx_advec_R(phi, oneoverlogdr)
+        dhrrdx_advec_R     = get_logdfdx_advec_R(hrr, oneoverlogdr)
+        dhttdx_advec_R     = get_logdfdx_advec_R(htt, oneoverlogdr)
+        dhppdx_advec_R     = get_logdfdx_advec_R(hpp, oneoverlogdr)
+        darrdx_advec_R     = get_logdfdx_advec_R(arr, oneoverlogdr)
+        dattdx_advec_R     = get_logdfdx_advec_R(att, oneoverlogdr)
+        dappdx_advec_R     = get_logdfdx_advec_R(app, oneoverlogdr)
+        dKdx_advec_R       = get_logdfdx_advec_R(K, oneoverlogdr)
+        dlambdardx_advec_R = get_logdfdx_advec_R(lambdar, oneoverlogdr)
+        dshiftrdx_advec_R  = get_logdfdx_advec_R(shiftr, oneoverlogdr)
+        dbrdx_advec_R      = get_logdfdx_advec_R(br, oneoverlogdr)
+        dlapsedx_advec_R   = get_logdfdx_advec_R(lapse, oneoverlogdr)         
+        
+    else :
+        
+        # second derivatives
+        d2udx2     = get_d2fdx2(u, oneoverdxsquared)
+        d2phidx2   = get_d2fdx2(phi, oneoverdxsquared)
+        d2hrrdx2   = get_d2fdx2(hrr, oneoverdxsquared)
+        d2httdx2   = get_d2fdx2(htt, oneoverdxsquared)
+        d2hppdx2   = get_d2fdx2(hpp, oneoverdxsquared)
+        d2lapsedx2 = get_d2fdx2(lapse, oneoverdxsquared)
+        d2shiftrdx2 = get_d2fdx2(shiftr, oneoverdxsquared)
     
-    dudx_advec_R       = get_dfdx_advec_R(u, oneoverdx)
-    dvdx_advec_R       = get_dfdx_advec_R(v, oneoverdx)
-    dphidx_advec_R     = get_dfdx_advec_R(phi, oneoverdx)
-    dhrrdx_advec_R     = get_dfdx_advec_R(hrr, oneoverdx)
-    dhttdx_advec_R     = get_dfdx_advec_R(htt, oneoverdx)
-    dhppdx_advec_R     = get_dfdx_advec_R(hpp, oneoverdx)
-    darrdx_advec_R     = get_dfdx_advec_R(arr, oneoverdx)
-    dattdx_advec_R     = get_dfdx_advec_R(att, oneoverdx)
-    dappdx_advec_R     = get_dfdx_advec_R(app, oneoverdx)
-    dKdx_advec_R       = get_dfdx_advec_R(K, oneoverdx)
-    dlambdardx_advec_R = get_dfdx_advec_R(lambdar, oneoverdx)
-    dshiftrdx_advec_R  = get_dfdx_advec_R(shiftr, oneoverdx)
-    dbrdx_advec_R      = get_dfdx_advec_R(br, oneoverdx)
-    dlapsedx_advec_R   = get_dfdx_advec_R(lapse, oneoverdx)  
+        # first derivatives
+        dudx       = get_dfdx(u, oneoverdx)
+        dvdx       = get_dfdx(v, oneoverdx)
+        dphidx     = get_dfdx(phi, oneoverdx)
+        dhrrdx     = get_dfdx(hrr, oneoverdx)
+        dhttdx     = get_dfdx(htt, oneoverdx)
+        dhppdx     = get_dfdx(hpp, oneoverdx)
+        darrdx     = get_dfdx(arr, oneoverdx)
+        dattdx     = get_dfdx(att, oneoverdx)
+        dappdx     = get_dfdx(app, oneoverdx)
+        dKdx       = get_dfdx(K, oneoverdx)
+        dlambdardx = get_dfdx(lambdar, oneoverdx)
+        dshiftrdx  = get_dfdx(shiftr, oneoverdx)
+        dbrdx      = get_dfdx(br, oneoverdx)
+        dlapsedx   = get_dfdx(lapse, oneoverdx)
+    
+        # first derivatives - advec left and right
+        dudx_advec_L       = get_dfdx_advec_L(u, oneoverdx)
+        dvdx_advec_L       = get_dfdx_advec_L(v, oneoverdx)
+        dphidx_advec_L     = get_dfdx_advec_L(phi, oneoverdx)
+        dhrrdx_advec_L     = get_dfdx_advec_L(hrr, oneoverdx)
+        dhttdx_advec_L     = get_dfdx_advec_L(htt, oneoverdx)
+        dhppdx_advec_L     = get_dfdx_advec_L(hpp, oneoverdx)
+        darrdx_advec_L     = get_dfdx_advec_L(arr, oneoverdx)
+        dattdx_advec_L     = get_dfdx_advec_L(att, oneoverdx)
+        dappdx_advec_L     = get_dfdx_advec_L(app, oneoverdx)
+        dKdx_advec_L       = get_dfdx_advec_L(K, oneoverdx)
+        dlambdardx_advec_L = get_dfdx_advec_L(lambdar, oneoverdx)
+        dshiftrdx_advec_L  = get_dfdx_advec_L(shiftr, oneoverdx)
+        dbrdx_advec_L      = get_dfdx_advec_L(br, oneoverdx)
+        dlapsedx_advec_L   = get_dfdx_advec_L(lapse, oneoverdx)
+    
+        dudx_advec_R       = get_dfdx_advec_R(u, oneoverdx)
+        dvdx_advec_R       = get_dfdx_advec_R(v, oneoverdx)
+        dphidx_advec_R     = get_dfdx_advec_R(phi, oneoverdx)
+        dhrrdx_advec_R     = get_dfdx_advec_R(hrr, oneoverdx)
+        dhttdx_advec_R     = get_dfdx_advec_R(htt, oneoverdx)
+        dhppdx_advec_R     = get_dfdx_advec_R(hpp, oneoverdx)
+        darrdx_advec_R     = get_dfdx_advec_R(arr, oneoverdx)
+        dattdx_advec_R     = get_dfdx_advec_R(att, oneoverdx)
+        dappdx_advec_R     = get_dfdx_advec_R(app, oneoverdx)
+        dKdx_advec_R       = get_dfdx_advec_R(K, oneoverdx)
+        dlambdardx_advec_R = get_dfdx_advec_R(lambdar, oneoverdx)
+        dshiftrdx_advec_R  = get_dfdx_advec_R(shiftr, oneoverdx)
+        dbrdx_advec_R      = get_dfdx_advec_R(br, oneoverdx)
+        dlapsedx_advec_R   = get_dfdx_advec_R(lapse, oneoverdx)  
     
     ####################################################################################################
     
