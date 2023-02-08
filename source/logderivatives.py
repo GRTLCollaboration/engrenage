@@ -7,10 +7,10 @@ import numpy as np
 # note that for consistency the inner ghost cells fall at -dr/2, -dr/2 - dr/c, -dr/2 - dr/c/c
 
 # Assumes num_ghosts ghost cells at either end of the vector of values
-from source.uservariables import *
+num_ghosts = 3
 
 #Logarithmic factor c and related factors
-c = 1.175
+c = 1.2
 c2 = c*c
 c3 = c2 * c
 c4 = c2 * c2
@@ -95,16 +95,17 @@ def get_logdfdx_advec_R(f, oneoverdr) :
         
     return oneoverdr * f_xR
 
-# 2N = 6 Kreiss Oliger dissipation
-# FIXME!
+# 2N = 4 Kreiss Oliger dissipation
+# Copied from Thomas's code, need to check derivation, why no oneoverdr?
+# diss_stencil = np.array([1.0, +1.0, 6.0, -4.0, 1.0])
 diss_stencil = np.array([+1., -6., +15., -20., +15., -6., +1.]) / 64.0
 
-def get_logdissipation(f, oneoverdx, sigma) :
+def get_logdissipation(f, oneoverdr, sigma) :
     diss_x = np.convolve(f, diss_stencil, mode='same')  
         
     # Clear out the ghost zones and zero near outer boundary
     diss_x[0:num_ghosts] = 0.
     diss_x[-(num_ghosts+3):] = 0.
         
-    return oneoverdx * sigma * diss_x
+    return sigma * diss_x * oneoverdr
 

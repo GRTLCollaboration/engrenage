@@ -5,17 +5,21 @@
 
 from source.uservariables import *
 from source.tensoralgebra import *
+from source.gridfunctions import *
 from source.fourthorderderivatives import *
+from source.logderivatives import *
 import numpy as np
 from scipy.interpolate import interp1d
 
 # This routine gives us something where phi = 0 initially but bar_R and lambda are non trivial
-def get_test_vars_values_1(R, N_r) :
+def get_test_vars_values_1(R, N_r, r_is_logarithmic = False) :
     
     # Set up grid values
-    dx = R/N_r
-    N = N_r + num_ghosts * 2 
-    r = np.linspace(-(num_ghosts-0.5)*dx, R+(num_ghosts-0.5)*dx, N)
+    dx, N, r, logarithmic_dr = setup_grid(R, N_r, r_is_logarithmic)
+    
+    # predefine some userful quantities
+    oneoverlogdr = 1.0 / logarithmic_dr
+    oneoverlogdr2 = oneoverlogdr * oneoverlogdr
     oneoverdx  = 1.0 / dx
     oneoverdxsquared = oneoverdx * oneoverdx
 
@@ -55,21 +59,22 @@ def get_test_vars_values_1(R, N_r) :
             test_vars_values[ix]    = test_vars_values[ix + offset]
 
     # overwrite inner cells using parity under r -> - r
-    for ivar in range(0, NUM_VARS) :
-        boundary_cells = np.array([(ivar)*N, (ivar)*N+1, (ivar)*N+2])
-        var_parity = parity[ivar]
-        for count, ix in enumerate(boundary_cells) :
-            offset = 5 - 2*count
-            test_vars_values[ix] = test_vars_values[ix + offset] * var_parity           
-
+    fill_inner_boundary(test_vars_values, dx, N, r_is_logarithmic)
+            
     # needed for lambdar
     hrr    = test_vars_values[idx_hrr * N : (idx_hrr + 1) * N]
     htt    = test_vars_values[idx_htt * N : (idx_htt + 1) * N]
     hpp    = test_vars_values[idx_hpp * N : (idx_hpp + 1) * N]
-    dhrrdx     = get_dfdx(hrr, oneoverdx)
-    dhttdx     = get_dfdx(htt, oneoverdx)
-    dhppdx     = get_dfdx(hpp, oneoverdx)
-    
+
+    if(r_is_logarithmic) :
+        dhrrdx = get_logdfdx(hrr, oneoverlogdr)
+        dhttdx = get_logdfdx(htt, oneoverlogdr)
+        dhppdx = get_logdfdx(hpp, oneoverlogdr)
+    else:
+        dhrrdx     = get_dfdx(hrr, oneoverdx)
+        dhttdx     = get_dfdx(htt, oneoverdx)
+        dhppdx     = get_dfdx(hpp, oneoverdx)
+        
     # assign lambdar values
     for ix in range(num_ghosts, N-num_ghosts) :
         
@@ -96,28 +101,25 @@ def get_test_vars_values_1(R, N_r) :
         test_vars_values[ix + idx_lambdar * N]   = Delta_U[i_r]
 
     # Fill boundary cells for lambdar
-    boundary_cells = np.array([(idx_lambdar + 1)*N-3, (idx_lambdar + 1)*N-2, (idx_lambdar + 1)*N-1])
-    for count, ix in enumerate(boundary_cells) :
-        offset = -1 - count
-        test_vars_values[ix]    = test_vars_values[ix + offset]
-        
-    boundary_cells = np.array([(idx_lambdar)*N, (idx_lambdar)*N+1, (idx_lambdar)*N+2])
-    for count, ix in enumerate(boundary_cells) :
-        offset = 5 - 2*count
-        test_vars_values[ix] = test_vars_values[ix + offset] * parity[idx_lambdar]
-        
+    fill_outer_boundary_ivar(test_vars_values, dx, N, r_is_logarithmic, idx_lambdar)
+
+    # overwrite inner cells using parity under r -> - r
+    fill_inner_boundary_ivar(test_vars_values, dx, N, r_is_logarithmic, idx_lambdar)
+            
     return r, test_vars_values
 
 # This routine gives us something where bar_R is trivial but phi is non trivial
-def get_test_vars_values_2(R, N_r) :
+def get_test_vars_values_2(R, N_r, r_is_logarithmic = False) :
     
     # Set up grid values
-    dx = R/N_r
-    N = N_r + num_ghosts * 2 
-    r = np.linspace(-(num_ghosts-0.5)*dx, R+(num_ghosts-0.5)*dx, N)
+    dx, N, r, logarithmic_dr = setup_grid(R, N_r, r_is_logarithmic)
+    
+    # predefine some userful quantities
+    oneoverlogdr = 1.0 / logarithmic_dr
+    oneoverlogdr2 = oneoverlogdr * oneoverlogdr
     oneoverdx  = 1.0 / dx
     oneoverdxsquared = oneoverdx * oneoverdx
-
+    
     test_vars_values = np.zeros(NUM_VARS * N)
     
     # Some test data with known values of bar_R etc
@@ -155,21 +157,22 @@ def get_test_vars_values_2(R, N_r) :
             test_vars_values[ix]    = test_vars_values[ix + offset]
 
     # overwrite inner cells using parity under r -> - r
-    for ivar in range(0, NUM_VARS) :
-        boundary_cells = np.array([(ivar)*N, (ivar)*N+1, (ivar)*N+2])
-        var_parity = parity[ivar]
-        for count, ix in enumerate(boundary_cells) :
-            offset = 5 - 2*count
-            test_vars_values[ix] = test_vars_values[ix + offset] * var_parity           
-
+    fill_inner_boundary(test_vars_values, dx, N, r_is_logarithmic)
+            
     # needed for lambdar
     hrr    = test_vars_values[idx_hrr * N : (idx_hrr + 1) * N]
     htt    = test_vars_values[idx_htt * N : (idx_htt + 1) * N]
     hpp    = test_vars_values[idx_hpp * N : (idx_hpp + 1) * N]
-    dhrrdx     = get_dfdx(hrr, oneoverdx)
-    dhttdx     = get_dfdx(htt, oneoverdx)
-    dhppdx     = get_dfdx(hpp, oneoverdx)
-    
+
+    if(r_is_logarithmic) :
+        dhrrdx = get_logdfdx(hrr, oneoverlogdr)
+        dhttdx = get_logdfdx(htt, oneoverlogdr)
+        dhppdx = get_logdfdx(hpp, oneoverlogdr)
+    else:
+        dhrrdx     = get_dfdx(hrr, oneoverdx)
+        dhttdx     = get_dfdx(htt, oneoverdx)
+        dhppdx     = get_dfdx(hpp, oneoverdx)     
+
     # assign lambdar values
     for ix in range(num_ghosts, N-num_ghosts) :
 
@@ -196,33 +199,30 @@ def get_test_vars_values_2(R, N_r) :
         test_vars_values[ix + idx_lambdar * N]   = Delta_U[i_r]
 
     # Fill boundary cells for lambdar
-    boundary_cells = np.array([(idx_lambdar + 1)*N-3, (idx_lambdar + 1)*N-2, (idx_lambdar + 1)*N-1])
-    for count, ix in enumerate(boundary_cells) :
-        offset = -1 - count
-        test_vars_values[ix]    = test_vars_values[ix + offset]
-        
-    boundary_cells = np.array([(idx_lambdar)*N, (idx_lambdar)*N+1, (idx_lambdar)*N+2])
-    for count, ix in enumerate(boundary_cells) :
-        offset = 5 - 2*count
-        test_vars_values[ix] = test_vars_values[ix + offset] * parity[idx_lambdar]
-        
+    fill_outer_boundary_ivar(test_vars_values, dx, N, r_is_logarithmic, idx_lambdar)
+
+    # overwrite inner cells using parity under r -> - r
+    fill_inner_boundary_ivar(test_vars_values, dx, N, r_is_logarithmic, idx_lambdar)
+            
     return r, test_vars_values
 
 # This routine gives us the Schwazschild metric in the original ingoing Eddington Finkelstien coords
 # that is r = r_schwarzschild and t = t_schwarzschild - (r-r*)
 # For this the RHS should be zero, but unlike in Schwarschild coords Kij and the shift are non trivial
 # (thanks to Ulrich Sperhake for suggesting this test)
-def get_test_vars_values_bh(R, N_r) :
+def get_test_vars_values_bh(R, N_r, r_is_logarithmic = True) :
 
-    # Set up grid values and params
-    dx = R/N_r
-    N = N_r + num_ghosts * 2 
-    r = np.linspace(-(num_ghosts-0.5)*dx, R+(num_ghosts-0.5)*dx, N)
+    # Set up grid values
+    dx, N, r, logarithmic_dr = setup_grid(R, N_r, r_is_logarithmic)
+    
+    # predefine some userful quantities
+    oneoverlogdr = 1.0 / logarithmic_dr
+    oneoverlogdr2 = oneoverlogdr * oneoverlogdr
     oneoverdx  = 1.0 / dx
     oneoverdxsquared = oneoverdx * oneoverdx
-    GM = 1.0
     
     test_vars_values = np.zeros(NUM_VARS * N)
+    GM = 1.0
     
     # Use the Kerr Schild solution with a=0 which has non trivial Kij
     for ix in range(num_ghosts, N) :
@@ -272,20 +272,21 @@ def get_test_vars_values_bh(R, N_r) :
         test_vars_values[ix + idx_K * N]     = K
        
     # overwrite inner cells using parity under r -> - r
-    for ivar in range(0, NUM_VARS) :
-        boundary_cells = np.array([(ivar)*N, (ivar)*N+1, (ivar)*N+2])
-        var_parity = parity[ivar]
-        for count, ix in enumerate(boundary_cells) :
-            offset = 5 - 2*count
-            test_vars_values[ix] = test_vars_values[ix + offset] * var_parity           
-
+    fill_inner_boundary(test_vars_values, dx, N, r_is_logarithmic)
+            
     # needed for lambdar
     hrr    = test_vars_values[idx_hrr * N : (idx_hrr + 1) * N]
     htt    = test_vars_values[idx_htt * N : (idx_htt + 1) * N]
     hpp    = test_vars_values[idx_hpp * N : (idx_hpp + 1) * N]
-    dhrrdx     = get_dfdx(hrr, oneoverdx)
-    dhttdx     = get_dfdx(htt, oneoverdx)
-    dhppdx     = get_dfdx(hpp, oneoverdx)
+
+    if(r_is_logarithmic) :
+        dhrrdx = get_logdfdx(hrr, oneoverlogdr)
+        dhttdx = get_logdfdx(htt, oneoverlogdr)
+        dhppdx = get_logdfdx(hpp, oneoverlogdr)
+    else:
+        dhrrdx     = get_dfdx(hrr, oneoverdx)
+        dhttdx     = get_dfdx(htt, oneoverdx)
+        dhppdx     = get_dfdx(hpp, oneoverdx)  
     
     # assign lambdar values
     for ix in range(num_ghosts, N-num_ghosts) :
@@ -313,14 +314,9 @@ def get_test_vars_values_bh(R, N_r) :
         test_vars_values[ix + idx_lambdar * N]   = Delta_U[i_r]
 
     # Fill boundary cells for lambdar
-    boundary_cells = np.array([(idx_lambdar + 1)*N-3, (idx_lambdar + 1)*N-2, (idx_lambdar + 1)*N-1])
-    for count, ix in enumerate(boundary_cells) :
-        offset = -1 - count
-        test_vars_values[ix]    = test_vars_values[ix + offset]
-        
-    boundary_cells = np.array([(idx_lambdar)*N, (idx_lambdar)*N+1, (idx_lambdar)*N+2])
-    for count, ix in enumerate(boundary_cells) :
-        offset = 5 - 2*count
-        test_vars_values[ix] = test_vars_values[ix + offset] * parity[idx_lambdar]
-        
+    fill_outer_boundary_ivar(test_vars_values, dx, N, r_is_logarithmic, idx_lambdar)
+
+    # overwrite inner cells using parity under r -> - r
+    fill_inner_boundary_ivar(test_vars_values, dx, N, r_is_logarithmic, idx_lambdar)
+            
     return r, test_vars_values

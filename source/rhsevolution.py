@@ -6,6 +6,7 @@ import time
 
 # homemade code
 from source.uservariables import *
+from source.gridfunctions import *
 from source.fourthorderderivatives import *
 from source.logderivatives import *
 from source.tensoralgebra import *
@@ -13,35 +14,19 @@ from source.mymatter import *
 from source.bssn_rhs import *
     
 # function that returns the rhs for each of the field vars
-def get_rhs(t_i, vars_vec, R, N_r, r_is_logarithmic, eta, progress_bar, state) :
+def get_rhs(t_i, vars_vec, R, N_r, r_is_logarithmic, eta, progress_bar, time_state) :
 
     # Some functions for timing and tracking progress
     start = time.time()
     
     # Set up grid values
-    dx = R/N_r
-    oneoverdx  = 1.0 / dx
-    oneoverdxsquared = oneoverdx * oneoverdx
-    N = N_r + num_ghosts * 2 
-    r = np.linspace(-(num_ghosts-0.5)*dx, R+(num_ghosts-0.5)*dx, N)
-    logarithmic_dr = np.ones_like(r)
-
-    if (r_is_logarithmic) :
-        # overwrite grid values for logarithmic grid
-        logarithmic_dr[num_ghosts] = dx
-        logarithmic_dr[num_ghosts-1] = logarithmic_dr[num_ghosts]/c
-        logarithmic_dr[num_ghosts-2] = logarithmic_dr[num_ghosts-1]/c
-        logarithmic_dr[num_ghosts-2] = logarithmic_dr[num_ghosts-2]/c        
-        r[num_ghosts] = dx / 2.0
-        r[num_ghosts - 1] = - dx / 2.0
-        r[num_ghosts - 2] = r[num_ghosts - 1] - dx / 2.0 / c
-        r[num_ghosts - 3] = r[num_ghosts - 2] - dx / 2.0 / c / c
-        for idx in np.arange(num_ghosts, N, 1) :
-            logarithmic_dr[idx] = logarithmic_dr[idx-1] * c
-            r[idx] = r[idx-1] + logarithmic_dr[idx]    
-
+    dx, N, r, logarithmic_dr = setup_grid(R, N_r, r_is_logarithmic)
+    
+    # predefine some userful quantities
     oneoverlogdr = 1.0 / logarithmic_dr
     oneoverlogdr2 = oneoverlogdr * oneoverlogdr
+    oneoverdx  = 1.0 / dx
+    oneoverdxsquared = oneoverdx * oneoverdx
     
     # this is where the rhs will go
     rhs = np.zeros_like(vars_vec) 
@@ -357,8 +342,8 @@ def get_rhs(t_i, vars_vec, R, N_r, r_is_logarithmic, eta, progress_bar, state) :
             # rhs_shiftr[ix]  += 0.0
         
     # end of rhs iteration over grid points   
-    ####################################################################################################        
-        
+    ####################################################################################################
+
     #package up the rhs values into a vector rhs (like vars_vec) for return - see uservariables.py
     pack_vars_vector(rhs, N_r, rhs_u, rhs_v , rhs_phi, rhs_hrr, rhs_htt, rhs_hpp, 
                      rhs_K, rhs_arr, rhs_att, rhs_app, rhs_lambdar, rhs_shiftr, rhs_br, rhs_lapse)
@@ -371,28 +356,22 @@ def get_rhs(t_i, vars_vec, R, N_r, r_is_logarithmic, eta, progress_bar, state) :
     diss = np.zeros_like(vars_vec) 
     for ivar in range(0, NUM_VARS) :
         ivar_values = vars_vec[(ivar)*N:(ivar+1)*N]
-        ivar_diss = get_dissipation(ivar_values, oneoverdx, sigma)
+        ivar_diss = np.zeros_like(ivar_values)
+        if(r_is_logarithmic) :
+            ivar_diss = get_logdissipation(ivar_values, oneoverlogdr, sigma)
+        else : 
+            ivar_diss = get_dissipation(ivar_values, oneoverdx, sigma)
         diss[(ivar)*N:(ivar+1)*N] = ivar_diss
     rhs += diss
     
     #################################################################################################### 
         
     # overwrite outer boundaries with extrapolation (order specified in uservariables.py)
-    for ivar in range(0, NUM_VARS) :
-        boundary_cells = np.array([(ivar + 1)*N-3, (ivar + 1)*N-2, (ivar + 1)*N-1])
-        var_asymptotic_power = asymptotic_power[ivar]
-        for count, ix in enumerate(boundary_cells) :
-            offset = -1 - count
-            rhs[ix]    = rhs[ix + offset] * (r[N - 3 + count] / r[N - 4])**var_asymptotic_power
+    fill_outer_boundary(vars_vec, dx, N, r_is_logarithmic)
 
     # overwrite inner cells using parity under r -> - r
-    for ivar in range(0, NUM_VARS) :
-        boundary_cells = np.array([(ivar)*N, (ivar)*N+1, (ivar)*N+2])
-        var_parity = parity[ivar]
-        for count, ix in enumerate(boundary_cells) :
-            offset = 5 - 2*count
-            rhs[ix] = rhs[ix + offset] * var_parity           
-                   
+    fill_inner_boundary(rhs, dx, N, r_is_logarithmic)
+                
     #################################################################################################### 
     
     # Some code for checking timing and progress output
@@ -402,13 +381,13 @@ def get_rhs(t_i, vars_vec, R, N_r, r_is_logarithmic, eta, progress_bar, state) :
     # state is a list containing last updated time t:
     # state = [last_t, dt for progress bar]
     # its values can be carried between function calls throughout the ODE integration
-    last_t, deltat = state
+    last_t, deltat = time_state
     
     # call update(n) here where n = (t - last_t) / dt
     n = int((t_i - last_t)/deltat)
     progress_bar.update(n)
     # we need this to take into account that n is a rounded number:
-    state[0] = last_t + deltat * n
+    time_state[0] = last_t + deltat * n
         
     ####################################################################################################
     

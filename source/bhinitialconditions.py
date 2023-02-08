@@ -6,35 +6,20 @@ from source.uservariables import *
 from source.tensoralgebra import *
 from source.fourthorderderivatives import *
 from source.logderivatives import *
+from source.gridfunctions import *
 import numpy as np
 from scipy.interpolate import interp1d
 
 def get_initial_vars_values(R, N_r, r_is_logarithmic) :
     
     # Set up grid values
-    dx = R/N_r
-    N = N_r + num_ghosts * 2 
-    r = np.linspace(-(num_ghosts-0.5)*dx, R+(num_ghosts-0.5)*dx, N)
-    oneoverdx  = 1.0 / dx
-    oneoverdxsquared = oneoverdx * oneoverdx
-    logarithmic_dr = np.ones_like(r)
+    dx, N, r, logarithmic_dr = setup_grid(R, N_r, r_is_logarithmic)
     
-    if (r_is_logarithmic) :
-        # overwrite grid values for logarithmic grid
-        logarithmic_dr[num_ghosts] = dx
-        logarithmic_dr[num_ghosts-1] = logarithmic_dr[num_ghosts]/c
-        logarithmic_dr[num_ghosts-2] = logarithmic_dr[num_ghosts-1]/c
-        logarithmic_dr[num_ghosts-2] = logarithmic_dr[num_ghosts-2]/c        
-        r[num_ghosts] = dx / 2.0
-        r[num_ghosts - 1] = - dx / 2.0
-        r[num_ghosts - 2] = r[num_ghosts - 1] - dx / 2.0 / c
-        r[num_ghosts - 3] = r[num_ghosts - 2] - dx / 2.0 / c / c
-        for idx in np.arange(num_ghosts, N, 1) :
-             logarithmic_dr[idx] = logarithmic_dr[idx-1] * c
-             r[idx] = r[idx-1] + logarithmic_dr[idx]
-             
+    # predefine some userful quantities
     oneoverlogdr = 1.0 / logarithmic_dr
     oneoverlogdr2 = oneoverlogdr * oneoverlogdr
+    oneoverdx  = 1.0 / dx
+    oneoverdxsquared = oneoverdx * oneoverdx
                      
     initial_vars_values = np.zeros(NUM_VARS * N)
     
@@ -69,29 +54,22 @@ def get_initial_vars_values(R, N_r, r_is_logarithmic) :
         #initial_vars_values[ix + idx_lapse * N] = 1.0 # or start with constant lapse
 
     # overwrite inner cells using parity under r -> - r
-    for ivar in range(0, NUM_VARS) :
-        boundary_cells = np.array([(ivar)*N, (ivar)*N+1, (ivar)*N+2])
-        var_parity = parity[ivar]
-        for count, ix in enumerate(boundary_cells) :
-            offset = 5 - 2*count
-            initial_vars_values[ix] = initial_vars_values[ix + offset] * var_parity
-            if (r_is_logarithmic) :
-                # for now just copy the values in the first grid point to all ghosts, respecting parity
-                initial_vars_values[ix] = initial_vars_values[ix + 3 - count] * var_parity
+    fill_inner_boundary(initial_vars_values, dx, N, r_is_logarithmic)
 
     # needed for lambdar
     hrr    = initial_vars_values[idx_hrr * N : (idx_hrr + 1) * N]
     htt    = initial_vars_values[idx_htt * N : (idx_htt + 1) * N]
     hpp    = initial_vars_values[idx_hpp * N : (idx_hpp + 1) * N]
-    dhrrdx     = get_dfdx(hrr, oneoverdx)
-    dhttdx     = get_dfdx(htt, oneoverdx)
-    dhppdx     = get_dfdx(hpp, oneoverdx)
              
     if(r_is_logarithmic) :
-        #overwrite with logarithmic derivatives
         dhrrdx = get_logdfdx(hrr, oneoverlogdr)
         dhttdx = get_logdfdx(htt, oneoverlogdr)
         dhppdx = get_logdfdx(hpp, oneoverlogdr)
+    
+    else : 
+        dhrrdx     = get_dfdx(hrr, oneoverdx)
+        dhttdx     = get_dfdx(htt, oneoverdx)
+        dhppdx     = get_dfdx(hpp, oneoverdx)
 
     # assign lambdar values
     for ix in range(num_ghosts, N-num_ghosts) :
@@ -119,18 +97,9 @@ def get_initial_vars_values(R, N_r, r_is_logarithmic) :
         initial_vars_values[ix + idx_lambdar * N]   = Delta_U[i_r]
 
     # Fill boundary cells for lambdar
-    boundary_cells = np.array([(idx_lambdar + 1)*N-3, (idx_lambdar + 1)*N-2, (idx_lambdar + 1)*N-1])
-    for count, ix in enumerate(boundary_cells) :
-        offset = -1 - count
-        initial_vars_values[ix]    = initial_vars_values[ix + offset] * ((r[N - 3 + count] / r[N - 4]) 
-                                                                         ** asymptotic_power[idx_lambdar])
-        
-    boundary_cells = np.array([(idx_lambdar)*N, (idx_lambdar)*N+1, (idx_lambdar)*N+2])
-    for count, ix in enumerate(boundary_cells) :
-        offset = 5 - 2*count
-        initial_vars_values[ix] = initial_vars_values[ix + offset] * parity[idx_lambdar]
-        if (r_is_logarithmic) :
-            # for now just copy the values in the first grid point to all ghosts, respecting parity
-            initial_vars_values[ix] = initial_vars_values[ix + 3 - count] * parity[idx_lambdar]
-        
+    fill_outer_boundary_ivar(initial_vars_values, dx, N, r_is_logarithmic, idx_lambdar)
+
+    # overwrite inner cells using parity under r -> - r
+    fill_inner_boundary_ivar(initial_vars_values, dx, N, r_is_logarithmic, idx_lambdar)
+            
     return r, initial_vars_values

@@ -8,6 +8,7 @@ import time
 from source.uservariables import *
 from source.fourthorderderivatives import *
 from source.logderivatives import *
+from source.gridfunctions import *
 from source.tensoralgebra import *
 from source.mymatter import *
 
@@ -18,29 +19,13 @@ def get_diagnostics(solutions_over_time, t, R, N_r, r_is_logarithmic) :
     start = time.time()
     
     # Set up grid values
-    dx = R/N_r
-    N = N_r + num_ghosts * 2 
-    r = np.linspace(-(num_ghosts-0.5)*dx, R+(num_ghosts-0.5)*dx, N)
-    oneoverdx  = 1.0 / dx
-    oneoverdxsquared = oneoverdx * oneoverdx
-    logarithmic_dr = np.ones_like(r)
+    dx, N, r, logarithmic_dr = setup_grid(R, N_r, r_is_logarithmic)
     
-    if (r_is_logarithmic) :
-        # overwrite grid values for logarithmic grid
-        logarithmic_dr[num_ghosts] = dx
-        logarithmic_dr[num_ghosts-1] = logarithmic_dr[num_ghosts]/c
-        logarithmic_dr[num_ghosts-2] = logarithmic_dr[num_ghosts-1]/c
-        logarithmic_dr[num_ghosts-2] = logarithmic_dr[num_ghosts-2]/c        
-        r[num_ghosts] = dx / 2.0
-        r[num_ghosts - 1] = - dx / 2.0
-        r[num_ghosts - 2] = r[num_ghosts - 1] - dx / 2.0 / c
-        r[num_ghosts - 3] = r[num_ghosts - 2] - dx / 2.0 / c / c
-        for idx in np.arange(num_ghosts, N, 1) :
-            logarithmic_dr[idx] = logarithmic_dr[idx-1] * c
-            r[idx] = r[idx-1] + logarithmic_dr[idx]    
-
+    # predefine some userful quantities
     oneoverlogdr = 1.0 / logarithmic_dr
     oneoverlogdr2 = oneoverlogdr * oneoverlogdr
+    oneoverdx  = 1.0 / dx
+    oneoverdxsquared = oneoverdx * oneoverdx
     
     Ham = []
     num_times = int(np.size(solutions_over_time) / (NUM_VARS * N))
@@ -81,7 +66,8 @@ def get_diagnostics(solutions_over_time, t, R, N_r, r_is_logarithmic) :
         dKdx       = get_dfdx(K, oneoverdx)
         dlambdardx = get_dfdx(lambdar, oneoverdx)
         
-        if(r_is_logarithmic) :            
+        if(r_is_logarithmic) :
+            
             #overwrite with logarithmic derivatives
             dudx       = get_logdfdx(u, oneoverlogdr)
             dvdx       = get_logdfdx(v, oneoverlogdr)
