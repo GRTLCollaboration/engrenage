@@ -1,6 +1,7 @@
 # BabyGRChombo
 
-A spherically symmetric BSSN code designed for teaching NR.
+BabyGRChombo is a spherically symmetric BSSN code designed for teaching Numerical Relativity (NR), which is the solution of the Einstein Equations of General Relativity (GR) using numerical methods. The code includes a scalar field (obeying the [Klein Gordon equation](https://en.wikipedia.org/wiki/Klein–Gordon_equation) for a minimally coupled spin 0 field) as the matter source of the metric curvature.
+It currently includes two physical examples - a black hole and a real scalar boson star (or oscillaton).
 
 Warning: This code was not designed to be a good example of optimised python usage or even of numerical relativity. The goal was to write a code where some non trivial physical examples could be studied and users could get an overview of the different parts of a numerical relativity code in action, without the optimisation and level of detail that exists in a typical research code like its parent [GRChombo](https://github.com/GRChombo/GRChombo).
 

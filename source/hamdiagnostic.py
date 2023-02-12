@@ -1,4 +1,4 @@
-#diagnostics.py
+#hamdiagnostics.py
 
 # python modules
 import numpy as np
@@ -12,9 +12,10 @@ from source.gridfunctions import *
 from source.tensoralgebra import *
 from source.mymatter import *
 
-# The diagnostic function currently just returns the Hamiltonian constraint
-# but this should be updated to include other quantities as required
-def get_diagnostics(solutions_over_time, t, R, N_r, r_is_logarithmic) :
+# The diagnostic function returns the Hamiltonian constraint over the grid
+# it takes in the solution of the evolution, which is the state vector at every
+# time step, and returns the spatial profile Ham(r) at each time step
+def get_Ham_diagnostic(solutions_over_time, t, R, N_r, r_is_logarithmic) :
 
     start = time.time()
     
@@ -41,7 +42,7 @@ def get_diagnostics(solutions_over_time, t, R, N_r, r_is_logarithmic) :
             solution = solutions_over_time[i]
 
         # Unpack variables
-        u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse = unpack_vars_vector(solution, N_r)
+        u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse = unpack_state(solution, N_r)
         
         ################################################################################################
 

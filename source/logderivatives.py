@@ -5,12 +5,13 @@ import numpy as np
 # function that returns the derivatives of a field f in 1D (radial), assuming that the grid is
 # structured with the first point at dr/2 and subsequent points at dr/2 + c*dr, dr/2 + c*c*dr etc
 # note that for consistency the inner ghost cells fall at -dr/2, -dr/2 - dr/c, -dr/2 - dr/c/c
+# For description of the grid setup see https://github.com/KAClough/BabyGRChombo/wiki/Useful-code-background
 
 # Assumes num_ghosts ghost cells at either end of the vector of values
-num_ghosts = 3
+from source.uservariables import *
 
 #Logarithmic factor c and related factors
-c = 1.2
+c = 1.075
 c2 = c*c
 c3 = c2 * c
 c4 = c2 * c2

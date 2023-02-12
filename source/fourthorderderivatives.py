@@ -3,6 +3,7 @@
 import numpy as np
 
 # function that returns the derivatives of a field f in 1D (radial)
+# For description of the grid setup see https://github.com/KAClough/BabyGRChombo/wiki/Useful-code-background
 
 # Assumes num_ghosts ghost cells at either end of the vector of values
 from source.uservariables import *

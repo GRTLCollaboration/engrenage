@@ -1,6 +1,7 @@
 # oscillatoninitialconditions.py
 
 # set the initial conditions for all the variables for an oscillaton
+# see further details in https://github.com/KAClough/BabyGRChombo/wiki/Running-the-oscillaton-example
 
 from source.uservariables import *
 from source.tensoralgebra import *
@@ -10,7 +11,7 @@ from source.gridfunctions import *
 import numpy as np
 from scipy.interpolate import interp1d
 
-def get_initial_vars_values(R, N_r, r_is_logarithmic) :
+def get_initial_state(R, N_r, r_is_logarithmic) :
     
     # Set up grid values
     dx, N, r, logarithmic_dr = setup_grid(R, N_r, r_is_logarithmic)
@@ -21,7 +22,7 @@ def get_initial_vars_values(R, N_r, r_is_logarithmic) :
     oneoverdx  = 1.0 / dx
     oneoverdxsquared = oneoverdx * oneoverdx
     
-    initial_vars_values = np.zeros(NUM_VARS * N)
+    initial_state = np.zeros(NUM_VARS * N)
     
     # Use oscilloton data to construct functions for the vars
     grr0_data    = np.loadtxt("../source/initial_data/grr0.csv")
@@ -43,12 +44,12 @@ def get_initial_vars_values(R, N_r, r_is_logarithmic) :
         r_i = r[ix]
 
         # scalar field values
-        initial_vars_values[ix + idx_u * N] = 0.0 # start at a moment where field is zero
-        initial_vars_values[ix + idx_v * N] = f_v(r_i)
+        initial_state[ix + idx_u * N] = 0.0 # start at a moment where field is zero
+        initial_state[ix + idx_v * N] = f_v(r_i)
  
         # non zero metric variables (note h_rr etc are rescaled difference from flat space so zero
         # and conformal factor is zero for flat space)
-        initial_vars_values[ix + idx_lapse * N] = f_lapse(r_i)
+        initial_state[ix + idx_lapse * N] = f_lapse(r_i)
         # note that we choose that the determinant \bar{gamma} = \hat{gamma} initially
         grr_here = f_grr(r_i)
         gtt_over_r2 = 1.0
@@ -57,19 +58,19 @@ def get_initial_vars_values(R, N_r, r_is_logarithmic) :
         phys_gamma_over_r4sin2theta = grr_here * gtt_over_r2 * gpp_over_r2sintheta
         # Note sign error in Baumgarte eqn (2) 
         phi_here = 1.0/12.0 * np.log(phys_gamma_over_r4sin2theta)
-        initial_vars_values[ix + idx_phi * N]   = phi_here
+        initial_state[ix + idx_phi * N]   = phi_here
         em4phi = np.exp(-4.0*phi_here)
-        initial_vars_values[ix + idx_hrr * N]   = em4phi * grr_here - 1
-        initial_vars_values[ix + idx_htt * N]   = em4phi * gtt_over_r2 - 1.0
-        initial_vars_values[ix + idx_hpp * N]   = em4phi * gpp_over_r2sintheta - 1.0
+        initial_state[ix + idx_hrr * N]   = em4phi * grr_here - 1
+        initial_state[ix + idx_htt * N]   = em4phi * gtt_over_r2 - 1.0
+        initial_state[ix + idx_hpp * N]   = em4phi * gpp_over_r2sintheta - 1.0
 
     # overwrite inner cells using parity under r -> - r
-    fill_inner_boundary(initial_vars_values, dx, N, r_is_logarithmic)
+    fill_inner_boundary(initial_state, dx, N, r_is_logarithmic)
                 
     # needed for lambdar
-    hrr    = initial_vars_values[idx_hrr * N : (idx_hrr + 1) * N]
-    htt    = initial_vars_values[idx_htt * N : (idx_htt + 1) * N]
-    hpp    = initial_vars_values[idx_hpp * N : (idx_hpp + 1) * N]
+    hrr    = initial_state[idx_hrr * N : (idx_hrr + 1) * N]
+    htt    = initial_state[idx_htt * N : (idx_htt + 1) * N]
+    hpp    = initial_state[idx_hpp * N : (idx_hpp + 1) * N]
     
     if(r_is_logarithmic) :
         dhrrdx = get_logdfdx(hrr, oneoverlogdr)
@@ -103,12 +104,12 @@ def get_initial_vars_values(R, N_r, r_is_logarithmic) :
         
         # The connections Delta^i, Delta^i_jk and Delta_ijk
         Delta_U, Delta_ULL, Delta_LLL  = get_connection(r_here, bar_gamma_UU, bar_gamma_LL, h, dhdr)
-        initial_vars_values[ix + idx_lambdar * N]   = Delta_U[i_r]
+        initial_state[ix + idx_lambdar * N]   = Delta_U[i_r]
 
     # Fill boundary cells for lambdar
-    fill_outer_boundary_ivar(initial_vars_values, dx, N, r_is_logarithmic, idx_lambdar)
+    fill_outer_boundary_ivar(initial_state, dx, N, r_is_logarithmic, idx_lambdar)
 
     # overwrite inner cells using parity under r -> - r
-    fill_inner_boundary_ivar(initial_vars_values, dx, N, r_is_logarithmic, idx_lambdar)
+    fill_inner_boundary_ivar(initial_state, dx, N, r_is_logarithmic, idx_lambdar)
             
-    return r, initial_vars_values
+    return r, initial_state
