@@ -1,9 +1,53 @@
 #gridfunctions.py
 
-from source.logderivatives import *
+import numpy as np
 from source.uservariables import *
 
 # For description of the grid setup see https://github.com/KAClough/BabyGRChombo/wiki/Useful-code-background
+
+# hard code number of ghosts to 3 here
+num_ghosts = 3
+
+# fix the value of c for logarithmic grid and precompute related functions of it
+c = 1.075
+c2 = c*c
+c3 = c2 * c
+c4 = c2 * c2
+c7 = c3 * c4
+c8 = c4 * c4
+oneplusc = 1.0 + c
+oneplusc2 = 1.0 + c2
+onepluscplusc2 = 1.0 + c + c*c
+
+# Finite difference coefficients
+
+# Centered first derivative (fourth order)
+Ap2 = - 1.0 / ( c2 * oneplusc * oneplusc2 * onepluscplusc2 );
+Ap1 = oneplusc / (c2 * onepluscplusc2 );
+A0 = 2.0 * (c - 1.0) / c;
+Am1 = - c4 * Ap1;
+Am2 = - c8 * Ap2;
+
+# Centered second derivative (third order)
+Bp2 = 2.0 * (1.0 - 2.0*c2 ) / ( c3 * oneplusc * oneplusc * oneplusc2 * onepluscplusc2 );
+Bp1 = 2.0 * (2.0*c - 1.0) * oneplusc / ( c3 * onepluscplusc2 );
+B0  = 2.0 * (1.0 - c - 5.0*c2 - c3 + c4) / ( c2 * oneplusc * oneplusc ); 
+Bm1 = 2.0 * (2.0 - c) * c * oneplusc / onepluscplusc2;
+Bm2 = 2.0 * c7 * (c2 - 2.0) / ( c2 * oneplusc * oneplusc * oneplusc2 * onepluscplusc2 );
+
+# downwind (right) first derivative (third order)
+Cp2 = - 1.0 / ( c2 * oneplusc * onepluscplusc2 );
+Cp1 = 1.0 / c2;
+C0 = ( c2 - 2.0 ) / (c * oneplusc);
+Cm1 = - c2 / onepluscplusc2;
+
+# upwind (left) first derivative (third order)
+Dp1 = 1.0 / ( c * onepluscplusc2 );
+D0 = ( 2.0 * c2 - 1.0) / ( c * oneplusc );
+Dm1 = - c;
+Dm2 = c4 / ( oneplusc * onepluscplusc2 );
+
+# Set up the grid
 def setup_grid(R, N_r, r_is_logarithmic) :
     
     dx = R/N_r
@@ -81,3 +125,60 @@ def fill_outer_boundary_ivar(state, dx, N, r_is_logarithmic, ivar) :
             # use asymptotic powers
             state[ix]    = state[ix + offset] * ((r_linear[N - 3 + count] / r_linear[N - 4]) 
                                                                          ** asymptotic_power[ivar])
+
+# Manage the state vector (for readability mainly)
+def unpack_state(vars_vec, N_r) :
+
+    domain_length = N_r + 2 * num_ghosts
+    
+    # Scalar field vars
+    u    = vars_vec[idx_u * domain_length : (idx_u + 1) * domain_length]
+    v    = vars_vec[idx_v * domain_length : (idx_v + 1) * domain_length]
+    
+    # Conformal factor and rescaled perturbation to spatial metric
+    phi    = vars_vec[idx_phi * domain_length : (idx_phi + 1) * domain_length]
+    hrr    = vars_vec[idx_hrr * domain_length : (idx_hrr + 1) * domain_length]
+    htt    = vars_vec[idx_htt * domain_length : (idx_htt + 1) * domain_length]
+    hpp    = vars_vec[idx_hpp * domain_length : (idx_hpp + 1) * domain_length]
+
+    # Mean curvature and rescaled perturbation to traceless A_ij
+    K      = vars_vec[idx_K   * domain_length : (idx_K   + 1) * domain_length]
+    arr    = vars_vec[idx_arr * domain_length : (idx_arr + 1) * domain_length]
+    att    = vars_vec[idx_att * domain_length : (idx_att + 1) * domain_length]
+    app    = vars_vec[idx_app * domain_length : (idx_app + 1) * domain_length]
+
+    # Gamma^x, shift and lapse
+    lambdar    = vars_vec[idx_lambdar * domain_length : (idx_lambdar + 1) * domain_length]
+    shiftr     = vars_vec[idx_shiftr  * domain_length : (idx_shiftr  + 1) * domain_length]
+    br         = vars_vec[idx_br      * domain_length : (idx_br      + 1) * domain_length]
+    lapse      = vars_vec[idx_lapse   * domain_length : (idx_lapse   + 1) * domain_length]    
+    
+    return u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse
+
+def pack_state(vars_vec, N_r, u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse) :
+    
+    domain_length = N_r + 2 * num_ghosts
+    
+    #package up the rhs values into a vector like vars_vec for return 
+  
+    # Scalar field vars
+    vars_vec[idx_u * domain_length : (idx_u + 1) * domain_length] = u
+    vars_vec[idx_v * domain_length : (idx_v + 1) * domain_length] = v
+    
+    # Conformal factor and rescaled perturbation to spatial metric
+    vars_vec[idx_phi * domain_length : (idx_phi + 1) * domain_length] = phi
+    vars_vec[idx_hrr * domain_length : (idx_hrr + 1) * domain_length] = hrr
+    vars_vec[idx_htt * domain_length : (idx_htt + 1) * domain_length] = htt
+    vars_vec[idx_hpp * domain_length : (idx_hpp + 1) * domain_length] = hpp
+
+    # Mean curvature and rescaled perturbation to traceless A_ij
+    vars_vec[idx_K   * domain_length : (idx_K   + 1) * domain_length] = K
+    vars_vec[idx_arr * domain_length : (idx_arr + 1) * domain_length] = arr
+    vars_vec[idx_att * domain_length : (idx_att + 1) * domain_length] = att
+    vars_vec[idx_app * domain_length : (idx_app + 1) * domain_length] = app
+
+    # Gamma^x, shift and lapse
+    vars_vec[idx_lambdar * domain_length : (idx_lambdar + 1) * domain_length] = lambdar
+    vars_vec[idx_shiftr  * domain_length : (idx_shiftr  + 1) * domain_length] = shiftr
+    vars_vec[idx_br      * domain_length : (idx_br      + 1) * domain_length] = br
+    vars_vec[idx_lapse   * domain_length : (idx_lapse   + 1) * domain_length] = lapse

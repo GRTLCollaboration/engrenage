@@ -6,7 +6,7 @@ import numpy as np
 # For description of the grid setup see https://github.com/KAClough/BabyGRChombo/wiki/Useful-code-background
 
 # Assumes num_ghosts ghost cells at either end of the vector of values
-from source.uservariables import *
+from source.gridfunctions import *
 
 # second derivative
 d2dx2_stencil = np.array([-1., +16., -30., +16., -1.0]) / 12.0
