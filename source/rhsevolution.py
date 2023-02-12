@@ -209,7 +209,7 @@ def get_rhs(t_i, current_state, R, N_r, r_is_logarithmic, eta, progress_bar, tim
     # note that we do the ghost cells separately below
     for ix in range(num_ghosts, N-num_ghosts) :
         
-        t0A = time.time()
+        #t0A = time.time()
         
         # where am I?
         r_here = r[ix]
