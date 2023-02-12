@@ -315,9 +315,9 @@ def get_rescaled_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar, dlambardr,
                 
             for k in range(0, SPACEDIM):
                 r_ricci[i][j] += (   0.5 * (r_gamma_LL[k][i] * rhat_D_Lambda[j][k] + 
-                                          r_gamma_LL[k][j] * rhat_D_Lambda[i][k])
+                                            r_gamma_LL[k][j] * rhat_D_Lambda[i][k])
                                    + 0.5 * (rDelta_U[k] * rDelta_LLL[i][j][k]  + 
-                                          rDelta_U[k] * rDelta_LLL[j][i][k]) )
+                                            rDelta_U[k] * rDelta_LLL[j][i][k]) )
                 
                 for l in range(0, SPACEDIM):
                     for m in range(0, SPACEDIM): 

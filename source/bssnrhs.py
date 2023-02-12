@@ -1,10 +1,11 @@
-# bssn_rhs.py
+# bssnrhs.py
 # as in Etienne https://arxiv.org/abs/1712.07658v2
 # see also Baumgarte https://arxiv.org/abs/1211.6632 for the eqns with matter
 
 import numpy as np
 from source.tensoralgebra import *
 
+# phi is the (exponential) conformal factor, that is \gamma_ij = e^{4\phi) \bar gamma_ij
 def get_rhs_phi(lapse, K, bar_div_shift) :
 
     # Calculate rhs
@@ -13,6 +14,9 @@ def get_rhs_phi(lapse, K, bar_div_shift) :
     
     return dphidt
 
+# h is the rescaled part of the deviation from the flat conformal metric
+# that is, \bar \gamma_ij = \hat \gamma_ij + \epsilon_ij
+# h_ij is rescaled \epsilon_ij (factors of 1/r etc)
 def get_rhs_h(r_here, r_gamma_LL, lapse, traceA, dshiftrdx, shiftr, bar_div_shift, a) :
     
     # This is \hat\gamma_jk \hat D_i shift^k (note Etienne paper notation ambiguity - this is not \hat D_i \beta_j)
@@ -29,13 +33,15 @@ def get_rhs_h(r_here, r_gamma_LL, lapse, traceA, dshiftrdx, shiftr, bar_div_shif
             
             # note that trace of \bar A_ij = 0 is enforced dynamically using the first term 
             # as in Etienne https://arxiv.org/abs/1712.07658v2 eqn (11a)
-            # recall that h is the rescaled quantity so we need to scale
+            # recall that h is the rescaled quantity so we need to scale all the terms
             dhdt[i][j] += ( two_thirds * r_gamma_LL[i][j] * (lapse * traceA - bar_div_shift)
                              + (rhat_D_shift[i][j] + rhat_D_shift[j][i])
                              - 2.0 * lapse * a[i][j])
     
     return dhdt
 
+# K is the trace of the extrinsic curvature 
+# that is K_ij = A_ij + 1/3 \gamma_ij K
 def get_rhs_K(lapse, K, Asquared, em4phi, d2lapsedr2, dlapsedr, 
               r_conformal_chris, dphidr, r_gamma_UU, rho, S) :
     
@@ -53,6 +59,9 @@ def get_rhs_K(lapse, K, Asquared, em4phi, d2lapsedr2, dlapsedr,
 
     return dKdt
 
+# a_ij is the rescaled version of the conformal, traceless part of the extrinsic curvature
+# that is A_ij =  e^{4\phi) \tilde A_ij
+# a_ij is rescaled \tilde A_ij (factors of 1/r etc)
 def get_rhs_a(r_here, a, bar_div_shift, lapse, K, em4phi, rbar_Rij, 
               r_conformal_chris, r_gamma_UU, r_gamma_LL,
               d2phidr2, dphidr, d2lapsedr2, dlapsedr, h, dhdr, d2hdr2, rSij) : 
@@ -94,6 +103,8 @@ def get_rhs_a(r_here, a, bar_div_shift, lapse, K, em4phi, rbar_Rij,
             
     return dadt
 
+# lambda_r is the rescaled part of the constrained quantity \Lambda^i = \Delta^i
+# Where \Delta^k = \bar\gamma^ij (\bar\Gamma^k_ij - \hat\Gamma^k_ij)
 def get_rhs_lambdar(r_here, d2shiftrdr2, dshiftrdr, shiftr, h, dhdr, rDelta_U, rDelta_ULL, bar_div_shift,
                     r_gamma_UU, a_UU, lapse, dlapsedr, dphidr, dKdr, Si) :
     

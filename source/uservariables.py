@@ -2,6 +2,7 @@
 
 # This file provides the list of (rescaled) variables to be evolved and
 # assigns each one an index and its parity
+# For description of the data structure see https://github.com/KAClough/BabyGRChombo/wiki/Useful-code-background
 
 idx_u       = 0    # scalar field
 idx_v       = 1    # scalar field conjugate momentum
@@ -20,6 +21,10 @@ idx_lapse   = 13   # lapse
 
 NUM_VARS = idx_lapse + 1
 
+variable_names = ["u", "v", "phi", "hrr", "htt", "hpp", 
+                  "K", "arr", "att", "app", 
+                  "lambdar", "shiftr", "br", "lapse"]
+
 # parity under r -> -r
 parity = [1, 1,           # u, v
           1, 1, 1, 1,     # phi, h
@@ -27,6 +32,7 @@ parity = [1, 1,           # u, v
           -1, -1, -1, 1]  # lambda^r, shift^r, b^r, lapse
 
 # scaling at larger r as power of r, i.e. var ~ r^asymptotic_power
+# currently only for linear r
 asymptotic_power =   [0., 0.,                # u, v
                       -1., -1., -1., -1.,    # phi, h
                       -2., -2., -2., -2.,    # K, a
@@ -35,7 +41,7 @@ asymptotic_power =   [0., 0.,                # u, v
 # hard code number of ghosts to 3 here
 num_ghosts = 3
 
-def unpack_vars_vector(vars_vec, N_r) :
+def unpack_state(vars_vec, N_r) :
 
     domain_length = N_r + 2 * num_ghosts
     
@@ -63,7 +69,7 @@ def unpack_vars_vector(vars_vec, N_r) :
     
     return u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse
 
-def pack_vars_vector(vars_vec, N_r, u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse) :
+def pack_state(vars_vec, N_r, u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse) :
     
     domain_length = N_r + 2 * num_ghosts
     
