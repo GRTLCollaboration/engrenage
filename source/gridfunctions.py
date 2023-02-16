@@ -63,7 +63,7 @@ def setup_grid(R, N_r, r_is_logarithmic) :
         logarithmic_dr[num_ghosts] = dx
         logarithmic_dr[num_ghosts-1] = logarithmic_dr[num_ghosts]/c
         logarithmic_dr[num_ghosts-2] = logarithmic_dr[num_ghosts-1]/c
-        logarithmic_dr[num_ghosts-2] = logarithmic_dr[num_ghosts-2]/c        
+        logarithmic_dr[num_ghosts-3] = logarithmic_dr[num_ghosts-2]/c        
         r[num_ghosts] = dx / 2.0
         r[num_ghosts - 1] = - dx / 2.0
         r[num_ghosts - 2] = r[num_ghosts - 1] - dx / c
