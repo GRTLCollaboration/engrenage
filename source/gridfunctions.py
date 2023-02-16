@@ -50,13 +50,16 @@ Dm2 = c4 / ( oneplusc * onepluscplusc2 );
 # Set up the grid
 def setup_grid(R, N_r, r_is_logarithmic) :
     
-    dx = R/N_r
+    # For a linear grid
+    dx = R / N_r
     N = N_r + num_ghosts * 2 
     r = np.linspace(-(num_ghosts-0.5)*dx, R+(num_ghosts-0.5)*dx, N)
     logarithmic_dr = np.ones_like(r)
     
     if (r_is_logarithmic) :
         # overwrite grid values for logarithmic grid
+        # We want the domain outer R to be at R, so... 
+        dx = R * (c-1) / (c ** N_r - 1)
         logarithmic_dr[num_ghosts] = dx
         logarithmic_dr[num_ghosts-1] = logarithmic_dr[num_ghosts]/c
         logarithmic_dr[num_ghosts-2] = logarithmic_dr[num_ghosts-1]/c
