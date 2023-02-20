@@ -6,7 +6,7 @@ from source.gridfunctions import *
 # function that returns the derivatives of a field f in 1D (radial), assuming that the grid is
 # structured with the first point at dr/2 and subsequent points at dr/2 + c*dr, dr/2 + c*c*dr etc
 # note that for consistency the inner ghost cells fall at -dr/2, -dr/2 - dr/c, -dr/2 - dr/c/c
-# For description of the grid setup see https://github.com/KAClough/BabyGRChombo/wiki/Useful-code-background
+# For description of the grid setup see https://github.com/GRChombo/engrenage/wiki/Useful-code-background
 
 # The coefficient values here are specified in gridfunctions
 

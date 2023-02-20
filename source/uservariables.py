@@ -2,7 +2,7 @@
 
 # This file provides the list of (rescaled) variables to be evolved and
 # assigns each one an index and its parity
-# For description of the data structure see https://github.com/KAClough/BabyGRChombo/wiki/Useful-code-background
+# For description of the data structure see https://github.com/GRChombo/engrenage/wiki/Useful-code-background
 
 idx_u       = 0    # scalar field
 idx_v       = 1    # scalar field conjugate momentum

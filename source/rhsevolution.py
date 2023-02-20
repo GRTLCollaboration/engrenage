@@ -14,7 +14,7 @@ from source.mymatter import *
 from source.bssnrhs import *
     
 # function that returns the rhs for each of the field vars
-# see further details in https://github.com/KAClough/BabyGRChombo/wiki/Useful-code-background
+# see further details in https://github.com/GRChombo/engrenage/wiki/Useful-code-background
 def get_rhs(t_i, current_state, R, N_r, r_is_logarithmic, eta, progress_bar, time_state) :
 
     # Uncomment for timing and tracking progress

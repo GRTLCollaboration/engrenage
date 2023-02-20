@@ -1,7 +1,7 @@
 # bhinitialconditions.py
 
 # set the initial conditions for all the variables for an isotropic Schwarzschild BH
-# see further details in https://github.com/KAClough/BabyGRChombo/wiki/Running-the-black-hole-example
+# see further details in https://github.com/GRChombo/engrenage/wiki/Running-the-black-hole-example
 
 from source.uservariables import *
 from source.tensoralgebra import *
