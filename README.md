@@ -1,6 +1,6 @@
 ![](engrenage.png "")
 
-# engrenage (the code formerly known as BabyGRChombo)
+# Engrenage (the code formerly known as BabyGRChombo)
 
 Engrenage is a spherically symmetric BSSN code designed for teaching Numerical Relativity (NR), which is the solution of the Einstein Equations of General Relativity (GR) using numerical methods. The code includes a scalar field (obeying the [Klein Gordon equation](https://en.wikipedia.org/wiki/Klein–Gordon_equation) for a minimally coupled spin 0 field) as the matter source of the metric curvature.
 It currently includes two physical examples - a black hole and a real scalar boson star (or oscillaton).
@@ -9,6 +9,7 @@ Warning: This code was not designed to be a good example of optimised python usa
 
 For more information and class resources see the [wiki](https://github.com/GRChombo/engrenage/wiki).
 
+(Engrenage is the French word for a system of gears. Understanding any code is very much like understanding how the parts of a mechanical system fit together. It is also very common when coding to be "pris dans l'engrenage".)
 
 # Installation
 
