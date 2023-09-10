@@ -37,7 +37,7 @@ def get_rhs(t_i, current_state, R, N_r, r_is_logarithmic, eta, progress_bar, tim
     # see uservariables.py for naming conventions
     
     # Unpack variables from current_state - see uservariables.py
-    u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse = unpack_state(current_state, N_r) 
+    u, v , phi, hrr, htt, hpp, K, arr, att, app, lambdar, shiftr, br, lapse = np.array_split(current_state, NUM_VARS) 
     
     # t0 = time.time()
     # print("grid and var setup done in ", t0-start_time)
@@ -372,10 +372,10 @@ def get_rhs(t_i, current_state, R, N_r, r_is_logarithmic, eta, progress_bar, tim
     # print("rhs iteration over grid done in ", t3 - t2)
     
     ####################################################################################################
-
-    #package up the rhs values into a vector rhs (like current_state) for return - see uservariables.py
-    pack_state(rhs, N_r, rhs_u, rhs_v , rhs_phi, rhs_hrr, rhs_htt, rhs_hpp, 
-                     rhs_K, rhs_arr, rhs_att, rhs_app, rhs_lambdar, rhs_shiftr, rhs_br, rhs_lapse)
+    
+    #package up the rhs values into a vector rhs (like current_state) for return
+    rhs = np.concatenate((rhs_u, rhs_v , rhs_phi, rhs_hrr, rhs_htt, rhs_hpp, 
+                     rhs_K, rhs_arr, rhs_att, rhs_app, rhs_lambdar, rhs_shiftr, rhs_br, rhs_lapse))
 
     #################################################################################################### 
             
