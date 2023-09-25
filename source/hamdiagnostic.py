@@ -9,7 +9,7 @@ from source.uservariables import *
 from source.fourthorderderivatives import *
 from source.logderivatives import *
 from source.gridfunctions import *
-from source.tensoralgebraNP import *
+from source.tensoralgebra import *
 from source.mymatter import *
 
 # The diagnostic function returns the Hamiltonian constraint over the grid

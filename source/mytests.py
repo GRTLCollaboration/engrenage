@@ -4,7 +4,7 @@
 # so provide a test that everything is working ok
 
 from source.uservariables import *
-from source.tensoralgebraNP import *
+from source.tensoralgebra import *
 from source.gridfunctions import *
 from source.fourthorderderivatives import *
 from source.logderivatives import *
