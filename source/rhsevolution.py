@@ -42,9 +42,8 @@ def get_rhs(t_i, current_state, R, N_r, r_is_logarithmic, eta, progress_bar, tim
     # enforce that the determinant of \bar gamma_ij is equal to that of flat space in spherical coords
     # (note that trace of \bar A_ij = 0 is enforced dynamically below as in Etienne https://arxiv.org/abs/1712.07658v2)
     
-    h_tensor = np.array([hrr, htt, hpp])
-
-    determinant = abs(get_rescaled_determinant_gamma(h_tensor))
+    h = np.array([hrr, htt, hpp])
+    determinant = abs(get_rescaled_determinant_gamma(h))
         
     hrr = (1.0 + hrr)/ np.power(determinant,1./3) - 1.0
     htt = (1.0 + htt)/ np.power(determinant,1./3) - 1.0
@@ -174,7 +173,6 @@ def get_rhs(t_i, current_state, R, N_r, r_is_logarithmic, eta, progress_bar, tim
     rhs_u, rhs_v, rhs_phi, rhs_hrr, rhs_htt, rhs_hpp, rhs_K, rhs_arr, rhs_att, rhs_app, rhs_lambdar, rhs_shiftr, rhs_br, rhs_lapse = np.array_split(rhs, NUM_VARS)    
     ####################################################################################################     
     # now calculate the rhs values for the main grid (boundaries handled below)       
-    h = np.array([hrr, htt, hpp])
     a = np.array([arr, att, app])
     em4phi = np.exp(-4.0*phi)
     dhdr   = np.array([dhrrdx, dhttdx, dhppdx])

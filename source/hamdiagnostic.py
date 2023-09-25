@@ -92,14 +92,9 @@ def get_Ham_diagnostic(solutions_over_time, t, R, N_r, r_is_logarithmic) :
             d2hppdx2   = get_d2fdx2(hpp, oneoverdxsquared)
 
         ##############################################################################################
-    
-        # make container for output values
-        Ham_i   = np.zeros_like(u)
-    
-        ##############################################################################################
 
-        h_tensor = np.array([hrr, htt, hpp])
-        a_tensor = np.array([arr, att, app])
+        h = np.array([hrr, htt, hpp])
+        a = np.array([arr, att, app])
         em4phi = np.exp(-4.0*phi)
         dhdr   = np.array([dhrrdx, dhttdx, dhppdx])
         d2hdr2 = np.array([d2hrrdx2, d2httdx2, d2hppdx2])
@@ -112,42 +107,44 @@ def get_Ham_diagnostic(solutions_over_time, t, R, N_r, r_is_logarithmic) :
         flat_chris = get_flat_spherical_chris(r)
         
         # rescaled \bar\gamma_ij
-        r_gamma_LL = get_rescaled_metric(h_tensor)
-        r_gamma_UU = get_rescaled_inverse_metric(h_tensor)
+        r_gamma_LL = get_rescaled_metric(h)
+        r_gamma_UU = get_rescaled_inverse_metric(h)
         
         # (unscaled) \bar\gamma_ij and \bar\gamma^ij
         bar_gamma_LL = get_metric(r, h)
         bar_gamma_UU = get_inverse_metric(r, h)
         
         # \bar A_ij, \bar A^ij and the trace A_i^i, then Asquared = \bar A_ij \bar A^ij
-        bar_A_LL = get_A_LL(r, a_tensor)
-        bar_A_UU = get_A_UU(a_tensor, r_gamma_UU, r)
-        traceA   = get_trace_A(a_tensor, r_gamma_UU)
-        Asquared = get_Asquared(a_tensor, r_gamma_UU)
+        bar_A_LL = get_A_LL(r, a)
+        bar_A_UU = get_A_UU(a, r_gamma_UU, r)
+        traceA   = get_trace_A(a, r_gamma_UU)
+        Asquared = get_Asquared(a, r_gamma_UU)
         
         # The connections Delta^i, Delta^i_jk and Delta_ijk
-        Delta_U, Delta_ULL, Delta_LLL  = get_connection(r_here, bar_gamma_UU, bar_gamma_LL, h, dhdr)
-        bar_Rij = get_ricci_tensor(r_here, h, dhdr, d2hdr2, lambdar[ix], dlambdardx[ix], 
+        Delta_U, Delta_ULL, Delta_LLL  = get_connection(r, bar_gamma_UU, bar_gamma_LL, h, dhdr)
+        bar_Rij = get_ricci_tensor(r, h, dhdr, d2hdr2, lambdar, dlambdardx, 
                                        Delta_U, Delta_ULL, Delta_LLL, bar_gamma_UU, bar_gamma_LL)
-        bar_Rij_reduced = np.array([bar_Rij[0][0],bar_Rij[1][1],bar_Rij[2][2]])
-        bar_R   = get_trace(bar_Rij, bar_gamma_UU)
+        bar_Rij_diag = np.array([bar_Rij[i_r][i_r],bar_Rij[i_t][i_t],bar_Rij[i_p][i_p]])
+        bar_R   = get_trace(bar_Rij_diag, bar_gamma_UU)
         
         # Matter sources
-        #matter_rho            = get_rho( u[ix], dudx[ix], v[ix], bar_gamma_UU, em4phi )
+        matter_rho            = get_rho(u, dudx, v, bar_gamma_UU, em4phi )
 
         # End of: Calculate some useful quantities, now start diagnostic
         #################################################################
 
         # Get the Ham constraint eqn (13) of Baumgarte https://arxiv.org/abs/1211.6632
-        #Ham_i = (  two_thirds * K[ix] * K[ix] - Asquared
-        #                 + em4phi * ( bar_R
-        #                              - 8.0 * bar_gamma_UU[i_r][i_r] * (dphidx[ix] * dphidx[ix] 
-        #                                                                + d2phidx2[ix])
-        #                              # These terms come from \bar\Gamma^r d_r \phi from the \bar D^2 \phi term
-        #                              + 8.0 * bar_gamma_UU[i_t][i_t] * flat_chris[i_r][i_t][i_t] * dphidx[ix]
-        #                              + 8.0 * bar_gamma_UU[i_p][i_p] * flat_chris[i_r][i_p][i_p] * dphidx[ix]
-        #                              + 8.0 * Delta_U[i_r] * dphidx[ix])
-        #                 - 2.0 * eight_pi_G * matter_rho )  
+        Ham_i = (  two_thirds * K * K - Asquared
+                         + em4phi * ( bar_R
+                                      - 8.0 * bar_gamma_UU[i_r][:] * (dphidx * dphidx 
+                                                                        + d2phidx2)
+               # These terms come from \bar\Gamma^r d_r \phi from the \bar D^2 \phi term
+                                      + 8.0 * bar_gamma_UU[i_t][:] 
+                                            * flat_chris[i_r][i_t][i_t] * dphidx
+                                      + 8.0 * bar_gamma_UU[i_p][:] 
+                                            * flat_chris[i_r][i_p][i_p] * dphidx
+                                      + 8.0 * Delta_U[i_r] * dphidx)
+                         - 2.0 * eight_pi_G * matter_rho ) 
         
         # Add the Ham value to the output
         Ham.append(Ham_i)

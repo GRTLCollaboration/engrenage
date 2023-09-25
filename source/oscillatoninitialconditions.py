@@ -74,29 +74,17 @@ def get_initial_state(R, N_r, r_is_logarithmic) :
         dhppdx     = get_dfdx(hpp, oneoverdx)
 
     # assign lambdar values
-    for ix in range(num_ghosts, N-num_ghosts) :
-
-        # position on the grid
-        r_here = r[ix]
+    h_tensor = np.array([hrr, htt, hpp])
+    a_tensor = np.array([arr, att, app])
+    dhdr   = np.array([dhrrdx, dhttdx, dhppdx])
         
-        # Assign BSSN vars to local tensors
-        h = np.zeros_like(rank_2_spatial_tensor)
-        h[i_r][i_r] = hrr[ix]
-        h[i_t][i_t] = htt[ix]
-        h[i_p][i_p] = hpp[ix]
+    # (unscaled) \bar\gamma_ij and \bar\gamma^ij
+    bar_gamma_LL = get_metric(r, h_tensor)
+    bar_gamma_UU = get_inverse_metric(r, h_tensor)
         
-        dhdr = np.zeros_like(rank_2_spatial_tensor)
-        dhdr[i_r][i_r] = dhrrdx[ix]
-        dhdr[i_t][i_t] = dhttdx[ix]
-        dhdr[i_p][i_p] = dhppdx[ix]
-        
-        # (unscaled) \bar\gamma_ij and \bar\gamma^ij
-        bar_gamma_LL = get_metric(r_here, h)
-        bar_gamma_UU = get_inverse_metric(r_here, h)
-        
-        # The connections Delta^i, Delta^i_jk and Delta_ijk
-        Delta_U, Delta_ULL, Delta_LLL  = get_connection(r_here, bar_gamma_UU, bar_gamma_LL, h, dhdr)
-        initial_state[ix + idx_lambdar * N]   = Delta_U[i_r]
+    # The connections Delta^i, Delta^i_jk and Delta_ijk
+    Delta_U, Delta_ULL, Delta_LLL  = get_connection(r, bar_gamma_UU, bar_gamma_LL, h_tensor, dhdr)
+    lambdar[:]   = Delta_U[i_r]
 
     # Fill boundary cells for lambdar
     fill_outer_boundary_ivar(initial_state, dx, N, r_is_logarithmic, idx_lambdar)

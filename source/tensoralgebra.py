@@ -196,7 +196,7 @@ def get_connection(r, bar_gamma_UU, bar_gamma_LL, h, dhdr) :
         for j in range(0, SPACEDIM):    
             Delta_U[i] += bar_gamma_UU[j][:] * Delta_ULL[i][j][j][:]
             for k in range(0, SPACEDIM):
-                    Delta_LLL[i][j][k][:] += bar_gamma_LL[i][:] * Delta_ULL[i][j][k][:]
+                Delta_LLL[i][j][k][:] += bar_gamma_LL[i][:] * Delta_ULL[i][j][k][:]
     
     return Delta_U, Delta_ULL, Delta_LLL
 
@@ -211,19 +211,19 @@ def get_rescaled_connection(r, r_gamma_UU, r_gamma_LL, h, dhdr) :
     N = np.size(r)
     rDelta_ULL = np.zeros([SPACEDIM, SPACEDIM, SPACEDIM, N])
     rDelta_LLL = np.zeros([SPACEDIM, SPACEDIM, SPACEDIM, N])
-    rhat_D_bar_gamma = get_hat_D_bar_gamma(r, h, dhdr)
+    rhat_D_bar_gamma = get_rescaled_hat_D_bar_gamma(r, h, dhdr)
 
     for i in range(0, SPACEDIM):
         for j in range(0, SPACEDIM):    
             for k in range(0, SPACEDIM):
-                    rDelta_ULL[i][j][k] += 0.5 * r_gamma_UU[i][:] * (  rhat_D_bar_gamma[j][k][i][:] 
-                                                                     + rhat_D_bar_gamma[k][j][i][:] 
-                                                                     - rhat_D_bar_gamma[i][j][k][:])
+                rDelta_ULL[i][j][k] += 0.5 * r_gamma_UU[i][:] * (  rhat_D_bar_gamma[j][k][i][:] 
+                                                                 + rhat_D_bar_gamma[k][j][i][:] 
+                                                                 - rhat_D_bar_gamma[i][j][k][:])
                     
     rDelta_U =  np.zeros([SPACEDIM, N])          
     for i in range(0, SPACEDIM):
         for j in range(0, SPACEDIM): 
-            rDelta_U[i] += r_gamma_UU[j][:] * rDelta_ULL[i][j][j][:]
+            rDelta_U[i][:] += r_gamma_UU[j][:] * rDelta_ULL[i][j][j][:]
             
             for k in range(0, SPACEDIM):
                     rDelta_LLL[i][j][k] += r_gamma_LL[i][:] * rDelta_ULL[i][j][k][:]
