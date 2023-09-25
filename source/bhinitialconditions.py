@@ -42,7 +42,7 @@ def get_initial_state(R, N_r, r_is_logarithmic) :
     htt[:] = em4phi * gtt_over_r2 - 1.0
     hpp[:] = em4phi * gpp_over_r2sintheta - 1.0    
     lapse.fill(1.0)
-    #lapse[:] = np.exp(-4.0*phi_here) # optional, to pre collapse the lapse
+    #lapse[:] = em4phi # optional, to pre collapse the lapse
     
     # overwrite inner cells using parity under r -> - r
     fill_inner_boundary(initial_state, dx, N, r_is_logarithmic)

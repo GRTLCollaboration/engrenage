@@ -5,19 +5,19 @@
 # For description of the data structure see https://github.com/GRChombo/engrenage/wiki/Useful-code-background
 
 idx_u       = 0    # scalar field
-idx_v       = 1    # scalar field conjugate momentum
-idx_phi     = 2    # conformal factor of metric
-idx_hrr     = 3    # rescaled \epsilon_rr -> h_rr
-idx_htt     = 4    # rescaled \epsilon_tt -> h_tt
-idx_hpp     = 5    # rescaled \epsilon_pp -> h_pp
+idx_v       = 1    # scalar field conjugate momentum (roughly the time derivative of u)
+idx_phi     = 2    # conformal factor of metric, \gamma_ij = e^{4 \phi} \bar \gamma_ij
+idx_hrr     = 3    # rescaled \epsilon_rr -> h_rr - deviation of rr component of the metric from flat
+idx_htt     = 4    # rescaled \epsilon_tt -> h_tt - deviation of tt component of the metric from flat
+idx_hpp     = 5    # rescaled \epsilon_pp -> h_pp - deviation of pp component of the metric from flat
 idx_K       = 6    # mean curvature K
-idx_arr     = 7    # rescaled \tilde A_rr -> a_rr
-idx_att     = 8    # rescaled \tilde A_tt -> a_tt
-idx_app     = 9    # rescaled \tilde A_pp -> a_pp
-idx_lambdar = 10   # rescaled \bar\Lambda -> lambda_rr
-idx_shiftr  = 11   # rescaled \beta^r -> shift_r
-idx_br      = 12   # rescaled B^r -> b_r
-idx_lapse   = 13   # lapse
+idx_arr     = 7    # rescaled \tilde A_rr -> a_rr - (roughly) time derivative of hrr
+idx_att     = 8    # rescaled \tilde A_tt -> a_tt - (roughly) time derivative of htt
+idx_app     = 9    # rescaled \tilde A_pp -> a_pp - (roughly) time derivative of hpp
+idx_lambdar = 10   # rescaled \bar\Lambda -> lambda^r 
+idx_shiftr  = 11   # rescaled \beta^r -> radial shift - gauge variable for relabelling spatial points
+idx_br      = 12   # rescaled B^r -> b^r - time derivative of shift
+idx_lapse   = 13   # lapse - gauge variable for time slicing
 
 NUM_VARS = idx_lapse + 1
 
