@@ -14,15 +14,15 @@ For more information and class resources see the [wiki](https://github.com/GRCho
 # Installation
 
 1. [Fork and clone](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
-   this repository.
-2. Create a [Python environment](https://docs.python.org/3/tutorial/venv.html),
+   this repository, or download the zipped files. 
+2. Having obtained a python distribution on your computer (e.g. [Anaconda](https://www.anaconda.com/download)), create a [Python environment](https://docs.python.org/3/tutorial/venv.html) using the terminal command:
    e.g. in `./env`:
 
     ```sh
     python3 -m venv ./env
     ```
 
-3. Install the Python requirements:
+3. Activate the environment and install the Python requirements:
 
     ```sh
     # Activate the Python environment
@@ -31,18 +31,11 @@ For more information and class resources see the [wiki](https://github.com/GRCho
     pip install -r ./requirements.txt
     ```
 
-4. Run the Jupyter notebook use either:
-
-    ```sh
-    jupyter-lab
-    ```
-    
-    or
+4. Run the Jupyter notebook:
 
     ```sh
     jupyter notebook
     ```
-    (depending on the style of interface that your prefer)
     
 
 # Acknowledgements
