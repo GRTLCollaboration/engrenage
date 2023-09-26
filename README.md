@@ -15,8 +15,7 @@ For more information and class resources see the [wiki](https://github.com/GRCho
 
 1. [Fork and clone](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
    this repository, or download the zipped files. 
-2. Having obtained a python distribution on your computer (e.g. [Anaconda](https://www.anaconda.com/download)), create a [Python environment](https://docs.python.org/3/tutorial/venv.html) using the terminal command:
-   e.g. in `./env`:
+2. Having obtained a python distribution on your computer (if you are just starting out you may want to use [Anaconda](https://www.anaconda.com/download)), create a [Python environment](https://docs.python.org/3/tutorial/venv.html) (e.g. in `./env`) using the terminal command:
 
     ```sh
     python3 -m venv ./env
