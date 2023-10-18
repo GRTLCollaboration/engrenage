@@ -321,7 +321,7 @@ def get_rhs(t_i, current_state, R, N_r, r_is_logarithmic, eta, progress_bar, tim
     # see gridfunctions for these, or https://github.com/KAClough/BabyGRChombo/wiki/Useful-code-background
     
     # overwrite outer boundaries with extrapolation (order specified in uservariables.py)
-    fill_outer_boundary(current_state, dx, N, r_is_logarithmic)
+    fill_outer_boundary(rhs, dx, N, r_is_logarithmic)
 
     # overwrite inner cells using parity under r -> - r
     fill_inner_boundary(rhs, dx, N, r_is_logarithmic)
