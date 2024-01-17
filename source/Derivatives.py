@@ -277,8 +277,11 @@ class Derivatives :
         c2 = c*c
         c3 = c2 * c
         c4 = c2 * c2
+        c5 = c2 * c3
+        c6 = c3 * c3
         c7 = c3 * c4
         c8 = c4 * c4
+        c9 = c5 * c4
         oneplusc = 1.0 + c
         oneplusc2 = 1.0 + c2
         onepluscplusc2 = 1.0 + c + c*c
@@ -304,34 +307,34 @@ class Derivatives :
         self.d2_stencil = np.array([Bm2, Bm1, B0, Bp1, Bp2])      
         
         # one sided (right) first derivative (third order)
-        Cp3 = 0.0
-        Cp2 = 0
-        Cp1 = 0
-        C0 = 0
+        Cp3 = 1 / c / onepluscplusc2
+        Cp2 = - onepluscplusc2 / c / oneplusc
+        Cp1 = onepluscplusc2
+        C0 = - c2 * (c3 + 3 * c2 + 4 * c + 3) / (c3 + 2 * c2 + 2 * c + 1)
 
         self.advec_d1_stencil_right = np.array([C0, Cp1, Cp2, Cp3])      
         
         # one sided (left) first derivative (third order)
-        D0 = 0
-        Dm1 = 0
-        Dm2 = 0
-        Dm3 = 0
+        D0 = (3*c3 + 4*c2 + 3*c + 1) / (c3 + 2*c2 + 2*c + 1 )
+        Dm1 = - onepluscplusc2 
+        Dm2 = c2 * onepluscplusc2 / (oneplusc)
+        Dm3 = -c5 / onepluscplusc2
 
         self.advec_d1_stencil_left = np.array([Dm3, Dm2, Dm1, D0])       
 
         # one sided (right) second derivative (third order)
-        Ep3 = 0.0
-        Ep2 = 0
-        Ep1 = 0
-        E0 = 0
+        Ep3 = -2 * (c+2) / c2 / onepluscplusc2 / oneplusc
+        Ep2 =  2 * (onepluscplusc2 + 1) / c2 / oneplusc
+        Ep1 = - 2 * (c2 + 2 * c + 2) / c / oneplusc
+        E0 = 2 * c * (c2 + 2 * c + 3) / onepluscplusc2 / oneplusc
 
         self.advec_d2_stencil_right = np.array([E0, Ep1, Ep2, Ep3])      
         
         # one sided (left) second derivative (third order)
-        F0 = 0
-        Fm1 = 0
-        Fm2 = 0
-        Fm3 = 0
+        F0 = 2 * (3*c2 + 2*c + 1 ) / c2 / oneplusc / onepluscplusc2
+        Fm1 = -2 * (2*c2 + 2*c + 1) / c2 / oneplusc
+        Fm2 = 2 * (c2 + onepluscplusc2) / oneplusc / c2
+        Fm3 = - 2 * c2 * (2*c + 1) / oneplusc / onepluscplusc2
 
         self.advec_d2_stencil_left = np.array([Fm3, Fm2, Fm1, F0])        
         
@@ -345,5 +348,19 @@ class Derivatives :
         Gm3 = 1.0
         
         self.dissipation_derivative_stencil = np.array([Gm3, Gm2, Gm1, G0, Gp1, Gp2, Gp3])
+        
+        # Weights for interpolation at the end points, using the innermost valid
+        # 4 grid points, label the values at these f1, f2, f3, f4
+        # WA is for the point at r = -dx/2 - dx/c (ignore parity)
+        WA1 = (c8 + c7 - 2*c5 - 2*c4 + 2*c2 + c - 1)/ (c6 * onepluscplusc2)
+        WA2 = 1
+        WA3 = 1
+        WA4 = 1
+
+        # WB is the point at r = -dx/2 - dx/c - dx/c/c (ignore parity)
+        WB1 = (c9 - c7 - 2*c6 - c5 + c4 +3*c3 + c2 - c - 1) / c9
+        WB2 = 1
+        WB3 = 1
+        WB4 = 1
         
     #End of Derivatives class
