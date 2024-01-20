@@ -285,6 +285,9 @@ class Derivatives :
         oneplusc = 1.0 + c
         oneplusc2 = 1.0 + c2
         onepluscplusc2 = 1.0 + c + c*c
+        onepluscplusc2plusc3 = 1.0 + c + c*c + c*c*c
+        onepluscplusc2plusc3plusc4 = 1.0 + c + c*c + c*c*c + c*c*c*c
+        onepluscplusc2plusc3plusc4plusc5 = 1.0 + c + c*c + c*c*c + c*c*c*c + c*c*c*c*c
         
         # Finite difference coefficients
         
@@ -323,44 +326,34 @@ class Derivatives :
         self.advec_d1_stencil_left = np.array([Dm3, Dm2, Dm1, D0])       
 
         # one sided (right) second derivative (third order)
-        Ep3 = -2 * (c+2) / c2 / onepluscplusc2 / oneplusc
-        Ep2 =  2 * (onepluscplusc2 + 1) / c2 / oneplusc
-        Ep1 = - 2 * (c2 + 2 * c + 2) / c / oneplusc
-        E0 = 2 * c * (c2 + 2 * c + 3) / onepluscplusc2 / oneplusc
+        Ep3 = -2 * (c+2) * c / onepluscplusc2 / oneplusc
+        Ep2 =  2 * (onepluscplusc2 + 1) * c / oneplusc
+        Ep1 = - 2 * (c2 + 2 * c + 2) * c2 / oneplusc
+        E0 = 2 * c4 * (c2 + 2 * c + 3) / onepluscplusc2 / oneplusc
 
         self.advec_d2_stencil_right = np.array([E0, Ep1, Ep2, Ep3])      
         
         # one sided (left) second derivative (third order)
-        F0 = 2 * (3*c2 + 2*c + 1 ) / c2 / oneplusc / onepluscplusc2
-        Fm1 = -2 * (2*c2 + 2*c + 1) / c2 / oneplusc
-        Fm2 = 2 * (c2 + onepluscplusc2) / oneplusc / c2
-        Fm3 = - 2 * c2 * (2*c + 1) / oneplusc / onepluscplusc2
+        F0 = 2 * c * (3*c2 + 2*c + 1 ) / oneplusc / onepluscplusc2
+        Fm1 = -2 * c * (2*c2 + 2*c + 1) / oneplusc
+        Fm2 = 2 * c2 * (2*c2 + c + 1) / oneplusc
+        Fm3 = - 2 * c5 * (2*c + 1) / oneplusc / onepluscplusc2
 
         self.advec_d2_stencil_left = np.array([Fm3, Fm2, Fm1, F0])        
         
         # Kreiss Oliger dissipation coefficients (6th derivative)
-        Gp3 = 1.0
-        Gp2 = 1.0
-        Gp1 = 1.0
-        G0  = 1.0
-        Gm1 = 1.0
-        Gm2 = 1.0
-        Gm3 = 1.0
+        Gp3 =   (720. / (2**6.0) / c3 / onepluscplusc2plusc3plusc4plusc5 / 
+               onepluscplusc2plusc3plusc4 / onepluscplusc2plusc3 / onepluscplusc2 / oneplusc)
+        Gp2 = - (720. / (2**6.0) / c3 /
+               onepluscplusc2plusc3plusc4 / onepluscplusc2plusc3 / onepluscplusc2 / oneplusc)
+        Gp1 =   (720. / (2**6.0) / c2 / onepluscplusc2plusc3 / onepluscplusc2 / oneplusc / oneplusc)
+        G0  = - (720. / (2**6.0) / onepluscplusc2 / onepluscplusc2 / oneplusc / oneplusc)
+        Gm1 =   (720. / (2**6.0) * c3 / onepluscplusc2plusc3 / onepluscplusc2 / oneplusc / oneplusc)
+        Gm2 = - (720. / (2**6.0) / c7 /
+               onepluscplusc2plusc3plusc4 / onepluscplusc2plusc3 / onepluscplusc2 / oneplusc)
+        Gm3 =   (720. / (2**6.0) * c6*c6 / onepluscplusc2plusc3plusc4plusc5 / 
+               onepluscplusc2plusc3plusc4 / onepluscplusc2plusc3 / onepluscplusc2 / oneplusc)
         
         self.dissipation_derivative_stencil = np.array([Gm3, Gm2, Gm1, G0, Gp1, Gp2, Gp3])
-        
-        # Weights for interpolation at the end points, using the innermost valid
-        # 4 grid points, label the values at these f1, f2, f3, f4
-        # WA is for the point at r = -dx/2 - dx/c (ignore parity)
-        WA1 = (c8 + c7 - 2*c5 - 2*c4 + 2*c2 + c - 1)/ (c6 * onepluscplusc2)
-        WA2 = 1
-        WA3 = 1
-        WA4 = 1
-
-        # WB is the point at r = -dx/2 - dx/c - dx/c/c (ignore parity)
-        WB1 = (c9 - c7 - 2*c6 - c5 + c4 +3*c3 + c2 - c - 1) / c9
-        WB2 = 1
-        WB3 = 1
-        WB4 = 1
         
     #End of Derivatives class

@@ -32,7 +32,6 @@ parity = [1, 1,           # u, v
           -1, -1, -1, 1]  # lambda^r, shift^r, b^r, lapse
 
 # scaling at larger r as power of r, i.e. var ~ r^asymptotic_power
-# currently only for linear r
 asymptotic_power =   [0., 0.,                # u, v
                       -1., -1., -1., -1.,    # phi, h
                       -2., -2., -2., -2.,    # K, a

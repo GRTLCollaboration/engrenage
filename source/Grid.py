@@ -63,55 +63,81 @@ class Grid :
         #print("The spacing is  ", self.dr_vector)
         
         self.derivatives = Derivatives(self.r_vector, self.dr_vector)
+        self.calculate_interpolation_weights()
 
     # fills the inner boundary ghosts at r=0 end
     def fill_inner_boundary(self, state) :
     
         for ivar in range(0, NUM_VARS) :
-            fill_inner_boundary_ivar(state)
+           self.fill_inner_boundary_ivar(state, ivar)
                 
-    def fill_inner_boundary_ivar(self, state) :
-        
-        #FIXME with proper interpolation of data
+    def fill_inner_boundary_ivar(self, state, ivar) :
         
         var_parity = parity[ivar]
-        c = self.log_factor
-        dx = self.base_dx
         N = self.num_points_r
-        dist1 = dx / c - c * dx # distance to ghost element -2
-        dist2 = dx / c + dx / c / c - c * dx # distance to ghost element -3
-        oneoverlogdr_a = 1.0 / (dx * c)
-        oneoverlogdr2_a = oneoverlogdr_a * oneoverlogdr_a        
-        idx_a = ivar * N + num_ghosts + 1 # Point a is the second valid point in the grid above r=0
-        # first impose the symmetry about zero for ghost element -1
-        state[idx_a - 2] = state[idx_a - 1] * var_parity
-        # calculate gradients at a
-        oneplusc = 1.0 + c
-        oneplusc2 = 1.0 + c*c
-        onepluscplusc2 = 1.0 + c + c*c
-        Ap2 = - 1.0 / ( c*c * oneplusc * oneplusc2 * onepluscplusc2 )
-        Ap1 = oneplusc / (c*c * onepluscplusc2 )
-        A0 = 2.0 * (c - 1.0) / c
-        Am1 = - c**4 * Ap1
-        Am2 = - c**8 * Ap2
+       
+        # idx1 is the first valid point in the grid above r=0
+        idx_1 = ivar * N + num_ghosts 
+        state[idx_1 - 1] = state[idx_1] * var_parity
+        state[idx_1 - 2] = var_parity * (state[idx_1+0] * self.xA_weights[0] + 
+                                         state[idx_1+1] * self.xA_weights[1] +
+                                         state[idx_1+2] * self.xA_weights[2])
+        state[idx_1 - 3] = var_parity * (state[idx_1+0] * self.xB_weights[0] + 
+                                         state[idx_1+1] * self.xB_weights[1] +
+                                         state[idx_1+2] * self.xB_weights[2])
         
-        dfdx_a   = (Am2 * state[idx_a-2] + Am1 * state[idx_a-1] + A0 * state[idx_a] 
-              + Ap1 * state[idx_a+1] + Ap2 * state[idx_a+2]) * oneoverlogdr_a
-        # Use taylor series approximation to fill points
-        state[idx_a - 3] = (state[idx_a] + dist1 * dfdx_a) * var_parity
-        state[idx_a - 4] = (state[idx_a] + dist2 * dfdx_a) * var_parity            
-
     # fills the outer boundary ghosts at large r
     def fill_outer_boundary(self, state) :
 
         for ivar in range(0, NUM_VARS) :
-            fill_outer_boundary_ivar(state)
+            self.fill_outer_boundary_ivar(state, ivar)
     
-    def fill_outer_boundary_ivar(self, state) :
+    def fill_outer_boundary_ivar(self, state, ivar) :
         
-        #FIXME with a proper extrapolation
+        var_asymptotic_power = asymptotic_power[ivar]
+        N = self.num_points_r
+        offset = 0
+        if (ivar == idx_lapse) :
+            offset = 1.0
        
-        boundary_cells = np.array([(ivar + 1)*N-3, (ivar + 1)*N-2, (ivar + 1)*N-1])
-        for count, ix in enumerate(boundary_cells) :
-            offset = -1 - count
-            state[ix]    = state[ix + offset]
+        # idx1 is the last valid point in the grid below ghosts for large r
+        idx_1 = (ivar+1) * N - num_ghosts - 1 
+        AA = (state[idx_1 + 0] - offset) / (self.r_vector[N-num_ghosts-1] ** var_asymptotic_power)
+        state[idx_1 + 1] = AA * (self.r_vector[N-num_ghosts+0] ** var_asymptotic_power) + offset
+        state[idx_1 + 2] = AA * (self.r_vector[N-num_ghosts+1] ** var_asymptotic_power) + offset
+        state[idx_1 + 3] = AA * (self.r_vector[N-num_ghosts+2] ** var_asymptotic_power) + offset
+            
+    def calculate_interpolation_weights(self) :
+        
+        # For readability
+        c = self.log_factor
+        c2 = c*c
+        c3 = c2 * c
+        c4 = c2 * c2
+        c5 = c2 * c3
+        c6 = c3 * c3
+        c7 = c3 * c4
+        c8 = c4 * c4
+        c9 = c5 * c4
+        oneplusc = 1.0 + c
+        oneplusc2 = 1.0 + c*c
+        onepluscplusc2 = 1.0 + c + c*c
+        
+        # Weights for interpolation at the end points, using the innermost valid
+        # 4 grid points above r=0, label the values at these f1, f2, f3, f4
+        # WA is for the point at r = -dx/2 - dx/c (ignore parity)
+
+        WA1 = (c8 + c7 - 2*c5 - 2*c4 + 2*c2 + c - 1)/ (c6 * onepluscplusc2)
+        WA2 = (c6 + c5 + c4 - c3 - c2 - c + 1)/ c8
+        WA3 = (-c5 + c2 + c - 1) / c9
+        WA4 = (c4 - c2 - c + 1) / (c9 * onepluscplusc2)
+
+        self.xA_weights = np.array([WA1, WA2, WA3, WA4])
+
+        # WB is the point at r = -dx/2 - dx/c - dx/c/c (ignore parity)
+        WB1 = (c9 - c7 - 2*c6 - c5 + c4 +3*c3 + c2 - c - 1) / c9
+        WB2 = (c3 * oneplusc - c - 1) * (c3 * onepluscplusc2 - oneplusc) / c9 / c2
+        WB3 = (-c3 + oneplusc) * (c3 * onepluscplusc2 - oneplusc) / c9 / c3
+        WB4 = (c5 - 2*c3 - c2 + c + 1) / c9 / c3
+        
+        self.xB_weights = np.array([WB1, WB2, WB3, WB4])
