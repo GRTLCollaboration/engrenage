@@ -6,27 +6,20 @@ import time
 
 # homemade code
 from source.uservariables import *
-from source.fourthorderderivatives import *
-from source.logderivatives import *
-from source.gridfunctions import *
+from source.Grid import *
 from source.tensoralgebra import *
 from source.mymatter import *
 
 # The diagnostic function returns the Hamiltonian constraint over the grid
 # it takes in the solution of the evolution, which is the state vector at every
 # time step, and returns the spatial profile Ham(r) at each time step
-def get_Ham_diagnostic(solutions_over_time, t, R, N_r, r_is_logarithmic) :
+def get_Ham_diagnostic(solutions_over_time, t, my_grid) :
 
     start = time.time()
     
-    # Set up grid values
-    dx, N, r, logarithmic_dr = setup_grid(R, N_r, r_is_logarithmic)
-    
-    # predefine some useful quantities
-    oneoverlogdr = 1.0 / logarithmic_dr
-    oneoverlogdr2 = oneoverlogdr * oneoverlogdr
-    oneoverdx  = 1.0 / dx
-    oneoverdxsquared = oneoverdx * oneoverdx
+    # For readability
+    r = my_grid.r_vector
+    N = my_grid.num_points_r
     
     Ham = []
     num_times = int(np.size(solutions_over_time) / (NUM_VARS * N))
@@ -47,50 +40,26 @@ def get_Ham_diagnostic(solutions_over_time, t, R, N_r, r_is_logarithmic) :
         
         ################################################################################################
         
-        if(r_is_logarithmic) :
+        # first derivatives
+        dudx       = np.dot(my_grid.derivatives.d1_matrix, u      )
+        dvdx       = np.dot(my_grid.derivatives.d1_matrix, v      )
+        dphidx     = np.dot(my_grid.derivatives.d1_matrix, phi    )
+        dhrrdx     = np.dot(my_grid.derivatives.d1_matrix, hrr    )
+        dhttdx     = np.dot(my_grid.derivatives.d1_matrix, htt    )
+        dhppdx     = np.dot(my_grid.derivatives.d1_matrix, hpp    )
+        darrdx     = np.dot(my_grid.derivatives.d1_matrix, arr    )
+        dattdx     = np.dot(my_grid.derivatives.d1_matrix, att    )
+        dappdx     = np.dot(my_grid.derivatives.d1_matrix, app    )
+        dKdx       = np.dot(my_grid.derivatives.d1_matrix, K      )
+        dlambdardx = np.dot(my_grid.derivatives.d1_matrix, lambdar)            
+
+        # second derivatives
+        d2udx2      = np.dot(my_grid.derivatives.d2_matrix, u     )
+        d2phidx2    = np.dot(my_grid.derivatives.d2_matrix, phi   )
+        d2hrrdx2    = np.dot(my_grid.derivatives.d2_matrix, hrr   )
+        d2httdx2    = np.dot(my_grid.derivatives.d2_matrix, htt   )
+        d2hppdx2    = np.dot(my_grid.derivatives.d2_matrix, hpp   )      
             
-            #first logarithmic derivatives
-            dudx       = get_logdfdx(u, oneoverlogdr)
-            dvdx       = get_logdfdx(v, oneoverlogdr)
-            dphidx     = get_logdfdx(phi, oneoverlogdr)
-            dhrrdx     = get_logdfdx(hrr, oneoverlogdr)
-            dhttdx     = get_logdfdx(htt, oneoverlogdr)
-            dhppdx     = get_logdfdx(hpp, oneoverlogdr)
-            darrdx     = get_logdfdx(arr, oneoverlogdr)
-            dattdx     = get_logdfdx(att, oneoverlogdr)
-            dappdx     = get_logdfdx(app, oneoverlogdr)
-            dKdx       = get_logdfdx(K, oneoverlogdr)
-            dlambdardx = get_logdfdx(lambdar, oneoverlogdr)
-
-            # second derivatives
-            d2udx2     = get_logd2fdx2(u, oneoverlogdr2)
-            d2phidx2   = get_logd2fdx2(phi, oneoverlogdr2)
-            d2hrrdx2   = get_logd2fdx2(hrr, oneoverlogdr2)
-            d2httdx2   = get_logd2fdx2(htt, oneoverlogdr2)
-            d2hppdx2   = get_logd2fdx2(hpp, oneoverlogdr2)
-
-        else :
-                
-            # first derivatives
-            dudx       = get_dfdx(u, oneoverdx)
-            dvdx       = get_dfdx(v, oneoverdx)
-            dphidx     = get_dfdx(phi, oneoverdx)
-            dhrrdx     = get_dfdx(hrr, oneoverdx)
-            dhttdx     = get_dfdx(htt, oneoverdx)
-            dhppdx     = get_dfdx(hpp, oneoverdx)
-            darrdx     = get_dfdx(arr, oneoverdx)
-            dattdx     = get_dfdx(att, oneoverdx)
-            dappdx     = get_dfdx(app, oneoverdx)
-            dKdx       = get_dfdx(K, oneoverdx)
-            dlambdardx = get_dfdx(lambdar, oneoverdx)
-            
-            # second derivatives
-            d2udx2     = get_d2fdx2(u, oneoverdxsquared)
-            d2phidx2   = get_d2fdx2(phi, oneoverdxsquared)
-            d2hrrdx2   = get_d2fdx2(hrr, oneoverdxsquared)
-            d2httdx2   = get_d2fdx2(htt, oneoverdxsquared)
-            d2hppdx2   = get_d2fdx2(hpp, oneoverdxsquared)
-
         ##############################################################################################
 
         h = np.array([hrr, htt, hpp])
@@ -98,8 +67,7 @@ def get_Ham_diagnostic(solutions_over_time, t, R, N_r, r_is_logarithmic) :
         em4phi = np.exp(-4.0*phi)
         dhdr   = np.array([dhrrdx, dhttdx, dhppdx])
         d2hdr2 = np.array([d2hrrdx2, d2httdx2, d2hppdx2])
-        
-        
+              
         # Calculate some useful quantities
         ########################################################
         
@@ -155,4 +123,4 @@ def get_Ham_diagnostic(solutions_over_time, t, R, N_r, r_is_logarithmic) :
     end = time.time()
     #print("time at t= ", t_i, " is, ", end-start)
     
-    return r, Ham
+    return Ham

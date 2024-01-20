@@ -59,7 +59,7 @@ def get_rhs(t_i, current_state, my_grid, eta, progress_bar, time_state) :
     dhrrdx     = np.dot(my_grid.derivatives.d1_matrix, hrr    )
     dhttdx     = np.dot(my_grid.derivatives.d1_matrix, htt    )
     dhppdx     = np.dot(my_grid.derivatives.d1_matrix, hpp    )
-    darrdx     = np.dot(my_grid.derivatives.d1_matrix, htt    )
+    darrdx     = np.dot(my_grid.derivatives.d1_matrix, arr    )
     dattdx     = np.dot(my_grid.derivatives.d1_matrix, att    )
     dappdx     = np.dot(my_grid.derivatives.d1_matrix, app    )
     dKdx       = np.dot(my_grid.derivatives.d1_matrix, K      )

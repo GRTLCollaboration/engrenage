@@ -81,10 +81,12 @@ class Grid :
         state[idx_1 - 1] = state[idx_1] * var_parity
         state[idx_1 - 2] = var_parity * (state[idx_1+0] * self.xA_weights[0] + 
                                          state[idx_1+1] * self.xA_weights[1] +
-                                         state[idx_1+2] * self.xA_weights[2])
+                                         state[idx_1+2] * self.xA_weights[2] +
+                                         state[idx_1+3] * self.xA_weights[3])
         state[idx_1 - 3] = var_parity * (state[idx_1+0] * self.xB_weights[0] + 
                                          state[idx_1+1] * self.xB_weights[1] +
-                                         state[idx_1+2] * self.xB_weights[2])
+                                         state[idx_1+2] * self.xB_weights[2] + 
+                                         state[idx_1+3] * self.xB_weights[3])
         
     # fills the outer boundary ghosts at large r
     def fill_outer_boundary(self, state) :
