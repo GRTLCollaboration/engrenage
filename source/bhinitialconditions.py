@@ -9,11 +9,11 @@ from source.Grid import *
 import numpy as np
 from scipy.interpolate import interp1d
 
-def get_initial_state(my_grid) :
+def get_initial_state(a_grid) :
     
     # For readability
-    r = my_grid.r_vector
-    N = my_grid.num_points_r
+    r = a_grid.r_vector
+    N = a_grid.num_points_r
                      
     initial_state = np.zeros(NUM_VARS * N)
     [u,v,phi,hrr,htt,hpp,K,arr,att,app,lambdar,shiftr,br,lapse] = np.array_split(initial_state, NUM_VARS)
@@ -38,11 +38,11 @@ def get_initial_state(my_grid) :
     #lapse[:] = em4phi # optional, to pre collapse the lapse
     
     # overwrite inner cells using parity under r -> - r
-    my_grid.fill_inner_boundary(initial_state)
+    a_grid.fill_inner_boundary(initial_state)
              
-    dhrrdx     = np.dot(my_grid.derivatives.d1_matrix, hrr)
-    dhttdx     = np.dot(my_grid.derivatives.d1_matrix, htt)
-    dhppdx     = np.dot(my_grid.derivatives.d1_matrix, hpp)
+    dhrrdx     = np.dot(a_grid.derivatives.d1_matrix, hrr)
+    dhttdx     = np.dot(a_grid.derivatives.d1_matrix, htt)
+    dhppdx     = np.dot(a_grid.derivatives.d1_matrix, hpp)
 
     # assign lambdar values
     h_tensor = np.array([hrr, htt, hpp])
@@ -58,9 +58,9 @@ def get_initial_state(my_grid) :
     lambdar[:]   = Delta_U[i_r]
 
     # Fill boundary cells for lambdar
-    my_grid.fill_outer_boundary_ivar(initial_state, idx_lambdar)
+    a_grid.fill_outer_boundary_ivar(initial_state, idx_lambdar)
 
     # overwrite inner cells using parity under r -> - r
-    my_grid.fill_inner_boundary_ivar(initial_state, idx_lambdar)
+    a_grid.fill_inner_boundary_ivar(initial_state, idx_lambdar)
             
     return initial_state

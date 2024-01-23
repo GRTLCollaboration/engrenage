@@ -241,9 +241,9 @@ def get_rhs(t_i, current_state, my_grid, eta, progress_bar, time_state) :
     diss = np.zeros_like(current_state)
     for ivar in range(0, NUM_VARS) :
         ivar_values = current_state[(ivar)*N:(ivar+1)*N]
-        ivar_diss = np.dot(my_grid.derivatives.d_advec_matrix_right, ivar_values) 
+        ivar_diss = np.dot(my_grid.derivatives.d_dissipation_matrix, ivar_values) 
         diss[(ivar)*N:(ivar+1)*N] = ivar_diss
-    rhs += diss
+    rhs += sigma * diss
     #################################################################################################### 
     
     # see https://github.com/KAClough/BabyGRChombo/wiki/Useful-code-background

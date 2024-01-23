@@ -6,9 +6,6 @@ from source.Derivatives import *
 
 # For description of the grid setup see https://github.com/GRChombo/engrenage/wiki/Useful-code-background
 
-# hard code number of ghosts to 3 here
-num_ghosts = 3
-
 class Grid :
     
     """

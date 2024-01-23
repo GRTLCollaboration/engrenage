@@ -233,31 +233,31 @@ class Derivatives :
             
             # Factors of the grid spacing for the derivative and 2^N factor
             h = self.dr_vector[idx_i]
-            one_over_h6 = 1.0 / (h**6.0) / 64.0
+            one_over_h = 1.0 / 64.0 #(self.dr_vector[num_ghosts]/h)**6.0 / 64.0
             
             # Populate non zero matrix elements
             for idx_j in indices :
 
                 if   (idx_i == (idx_j+3)) :
-                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[0] * one_over_h6
+                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[0] * one_over_h
                 
                 elif (idx_i == (idx_j+2)) :
-                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[1] * one_over_h6
+                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[1] * one_over_h
 
                 elif (idx_i == idx_j+1) :
-                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[2] * one_over_h6 
+                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[2] * one_over_h 
                     
                 elif (idx_i == (idx_j)) :
-                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[3] * one_over_h6
+                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[3] * one_over_h
 
                 elif (idx_i == (idx_j-1)) :
-                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[4] * one_over_h6
+                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[4] * one_over_h
                     
                 elif (idx_i == (idx_j-2)) :
-                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[3] * one_over_h6
+                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[3] * one_over_h
 
                 elif (idx_i == (idx_j-3)) :
-                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[4] * one_over_h6
+                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[4] * one_over_h
                     
                 else :
                     diss_matrix[idx_i,idx_j] = 0.0
@@ -294,7 +294,7 @@ class Derivatives :
         # Centered first derivative (fourth order)
         Ap2 = - 1.0 / ( c2 * oneplusc * oneplusc2 * onepluscplusc2 )
         Ap1 = oneplusc / (c2 * onepluscplusc2 )
-        A0 = 2.0 * (c - 1.0) / c
+        A0  = 2.0 * (c - 1.0) / c
         Am1 = - c4 * Ap1
         Am2 = - c8 * Ap2
         
@@ -310,15 +310,15 @@ class Derivatives :
         self.d2_stencil = np.array([Bm2, Bm1, B0, Bp1, Bp2])      
         
         # one sided (right) first derivative (third order)
-        Cp3 = 1 / c / onepluscplusc2
-        Cp2 = - onepluscplusc2 / c / oneplusc
-        Cp1 = onepluscplusc2
-        C0 = - c2 * (c3 + 3 * c2 + 4 * c + 3) / (c3 + 2 * c2 + 2 * c + 1)
+        Cp3 = 1.0 / c4 / onepluscplusc2
+        Cp2 = - onepluscplusc2 / c4 / oneplusc
+        Cp1 = onepluscplusc2 / c3
+        C0 = - (c3 + 3.0 * c2 + 4.0 * c + 3.0) / c / (c3 + 2.0 * c2 + 2.0 * c + 1.0)
 
         self.advec_d1_stencil_right = np.array([C0, Cp1, Cp2, Cp3])      
         
         # one sided (left) first derivative (third order)
-        D0 = (3*c3 + 4*c2 + 3*c + 1) / (c3 + 2*c2 + 2*c + 1 )
+        D0 = (3.0 * c3 + 4.0 * c2 + 3.0 * c + 1.0) / (c3 + 2.0 * c2 + 2.0 * c + 1.0)
         Dm1 = - onepluscplusc2 
         Dm2 = c2 * onepluscplusc2 / (oneplusc)
         Dm3 = -c5 / onepluscplusc2
@@ -326,32 +326,32 @@ class Derivatives :
         self.advec_d1_stencil_left = np.array([Dm3, Dm2, Dm1, D0])       
 
         # one sided (right) second derivative (third order)
-        Ep3 = -2 * (c+2) * c / onepluscplusc2 / oneplusc
-        Ep2 =  2 * (onepluscplusc2 + 1) * c / oneplusc
-        Ep1 = - 2 * (c2 + 2 * c + 2) * c2 / oneplusc
-        E0 = 2 * c4 * (c2 + 2 * c + 3) / onepluscplusc2 / oneplusc
+        Ep3 = - 2.0 * (c + 2.0) / c5 / onepluscplusc2 / oneplusc
+        Ep2 =   2.0 * (onepluscplusc2 + 1.0) / c5 / oneplusc
+        Ep1 = - 2.0 * (c2 + 2.0 * c + 2.0) / c4 / oneplusc
+        E0  =   2.0 * (c2 + 2.0 * c + 3.0) / c2 / onepluscplusc2 / oneplusc
 
         self.advec_d2_stencil_right = np.array([E0, Ep1, Ep2, Ep3])      
         
         # one sided (left) second derivative (third order)
-        F0 = 2 * c * (3*c2 + 2*c + 1 ) / oneplusc / onepluscplusc2
-        Fm1 = -2 * c * (2*c2 + 2*c + 1) / oneplusc
-        Fm2 = 2 * c2 * (2*c2 + c + 1) / oneplusc
-        Fm3 = - 2 * c5 * (2*c + 1) / oneplusc / onepluscplusc2
+        F0  =   2.0 * c  * (3.0 * c2 + 2.0 * c + 1.0) / oneplusc / onepluscplusc2
+        Fm1 = - 2.0 * c  * (2.0 * c2 + 2.0 * c + 1.0) / oneplusc
+        Fm2 =   2.0 * c2 * (2.0 * c2 + c + 1.0) / oneplusc
+        Fm3 = - 2.0 * c5 * (2.0 * c + 1.0) / oneplusc / onepluscplusc2
 
         self.advec_d2_stencil_left = np.array([Fm3, Fm2, Fm1, F0])        
         
         # Kreiss Oliger dissipation coefficients (6th derivative)
-        Gp3 =   (720. / (2**6.0) / c3 / onepluscplusc2plusc3plusc4plusc5 / 
+        Gp3 =   (720. / c3 / onepluscplusc2plusc3plusc4plusc5 / 
                onepluscplusc2plusc3plusc4 / onepluscplusc2plusc3 / onepluscplusc2 / oneplusc)
-        Gp2 = - (720. / (2**6.0) / c3 /
+        Gp2 = - (720. / c3 /
                onepluscplusc2plusc3plusc4 / onepluscplusc2plusc3 / onepluscplusc2 / oneplusc)
-        Gp1 =   (720. / (2**6.0) / c2 / onepluscplusc2plusc3 / onepluscplusc2 / oneplusc / oneplusc)
-        G0  = - (720. / (2**6.0) / onepluscplusc2 / onepluscplusc2 / oneplusc / oneplusc)
-        Gm1 =   (720. / (2**6.0) * c3 / onepluscplusc2plusc3 / onepluscplusc2 / oneplusc / oneplusc)
-        Gm2 = - (720. / (2**6.0) / c7 /
+        Gp1 =   (720. / c2 / onepluscplusc2plusc3 / onepluscplusc2 / oneplusc / oneplusc)
+        G0  = - (720. / onepluscplusc2 / onepluscplusc2 / oneplusc / oneplusc)
+        Gm1 =   (720. / c3 / onepluscplusc2plusc3 / onepluscplusc2 / oneplusc / oneplusc)
+        Gm2 = - (720. / c7 /
                onepluscplusc2plusc3plusc4 / onepluscplusc2plusc3 / onepluscplusc2 / oneplusc)
-        Gm3 =   (720. / (2**6.0) * c6*c6 / onepluscplusc2plusc3plusc4plusc5 / 
+        Gm3 =   (720. / c6*c6 / onepluscplusc2plusc3plusc4plusc5 / 
                onepluscplusc2plusc3plusc4 / onepluscplusc2plusc3 / onepluscplusc2 / oneplusc)
         
         self.dissipation_derivative_stencil = np.array([Gm3, Gm2, Gm1, G0, Gp1, Gp2, Gp3])
