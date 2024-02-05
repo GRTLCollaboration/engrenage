@@ -5,9 +5,6 @@ from source.uservariables import *
 
 # For the derivation of the stencil coefficients see the notebook 
 # DerivativeCalculations.ipynb in tests
-            
-# Derivative matrix class
-# First make a class for the Heat Equation
 
 class Derivatives :
     
@@ -233,31 +230,31 @@ class Derivatives :
             
             # Factors of the grid spacing for the derivative and 2^N factor
             h = self.dr_vector[idx_i]
-            one_over_h = 1.0 / 64.0 #(self.dr_vector[num_ghosts]/h)**6.0 / 64.0
+            one_over_h6 = (self.dr_vector[num_ghosts]/h)**6.0 / 64.0
             
             # Populate non zero matrix elements
             for idx_j in indices :
 
                 if   (idx_i == (idx_j+3)) :
-                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[0] * one_over_h
+                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[0] * one_over_h6
                 
                 elif (idx_i == (idx_j+2)) :
-                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[1] * one_over_h
+                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[1] * one_over_h6
 
                 elif (idx_i == idx_j+1) :
-                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[2] * one_over_h 
+                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[2] * one_over_h6 
                     
                 elif (idx_i == (idx_j)) :
-                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[3] * one_over_h
+                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[3] * one_over_h6
 
                 elif (idx_i == (idx_j-1)) :
-                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[4] * one_over_h
+                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[4] * one_over_h6
                     
                 elif (idx_i == (idx_j-2)) :
-                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[3] * one_over_h
+                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[5] * one_over_h6
 
                 elif (idx_i == (idx_j-3)) :
-                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[4] * one_over_h
+                    diss_matrix[idx_i,idx_j] = self.dissipation_derivative_stencil[6] * one_over_h6
                     
                 else :
                     diss_matrix[idx_i,idx_j] = 0.0
@@ -341,7 +338,7 @@ class Derivatives :
 
         self.advec_d2_stencil_left = np.array([Fm3, Fm2, Fm1, F0])        
         
-        # Kreiss Oliger dissipation coefficients (6th derivative)
+        # Kreiss Oliger dissipation coefficients (6th derivative coeffs)
         Gp3 =   (720. / c3 / onepluscplusc2plusc3plusc4plusc5 / 
                onepluscplusc2plusc3plusc4 / onepluscplusc2plusc3 / onepluscplusc2 / oneplusc)
         Gp2 = - (720. / c3 /

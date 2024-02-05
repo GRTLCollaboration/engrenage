@@ -41,15 +41,15 @@ class Grid :
         
         # Fill with values according to logarithmic scheme (note that fixed spacing is 
         # treated simply as a special case with c=1.0
-        self.dr_vector[num_ghosts] = self.base_dx
-        self.dr_vector[num_ghosts-1] = self.dr_vector[num_ghosts]/self.log_factor
-        self.dr_vector[num_ghosts-2] = self.dr_vector[num_ghosts-1]/self.log_factor
-        self.dr_vector[num_ghosts-3] = self.dr_vector[num_ghosts-2]/self.log_factor      
-        self.r_vector[num_ghosts] = self.base_dx / 2.0
-        self.r_vector[num_ghosts - 1] = - self.base_dx / 2.0
-        self.r_vector[num_ghosts - 2] = (self.r_vector[num_ghosts - 1] 
+        self.dr_vector[num_ghosts    ] = self.base_dx
+        self.dr_vector[num_ghosts - 1] = self.dr_vector[num_ghosts]/self.log_factor
+        self.dr_vector[num_ghosts - 2] = self.dr_vector[num_ghosts-1]/self.log_factor
+        self.dr_vector[num_ghosts - 3] = self.dr_vector[num_ghosts-2]/self.log_factor      
+        self.r_vector[num_ghosts    ]  = self.base_dx / 2.0
+        self.r_vector[num_ghosts - 1]  = - self.base_dx / 2.0
+        self.r_vector[num_ghosts - 2]  = (self.r_vector[num_ghosts - 1] 
                                          - self.base_dx / self.log_factor)
-        self.r_vector[num_ghosts - 3] = (self.r_vector[num_ghosts - 2] 
+        self.r_vector[num_ghosts - 3]  = (self.r_vector[num_ghosts - 2] 
                                          - self.base_dx / self.log_factor / self.log_factor)
         for idx in np.arange(num_ghosts, a_num_points_r, 1) :
             self.dr_vector[idx] = self.dr_vector[idx-1] * self.log_factor
@@ -66,7 +66,7 @@ class Grid :
     def fill_inner_boundary(self, state) :
     
         for ivar in range(0, NUM_VARS) :
-           self.fill_inner_boundary_ivar(state, ivar)
+            self.fill_inner_boundary_ivar(state, ivar)
                 
     def fill_inner_boundary_ivar(self, state, ivar) :
         
