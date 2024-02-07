@@ -10,14 +10,14 @@ class Derivatives :
     
     """
     Represents the derivatives on a grid defined by the points in r_vector, 
-    with num_points_r points in total (including ghosts) over a range of values range_in_r. 
-    Uses one sided derivatives at the end of the interval. These may or may not be overwritten in
-    the boundary code. This code assumes 3 ghost cells by default.
+    with num_points_r points in total (including ghosts) 
+    Uses one sided derivatives at the end of the interval. These may or may not be overwritten by
+    the boundary code in Grid. This code assumes 3 ghost cells by default.
     
-    attributes: r_vector, range_in_r, num_points_r, log_factor (determines the ratio 
-    by which the dx increases at each interval)
+    attributes: r_vector, dr_vector, from which we derive num_points_r and log_factor, 
+    the various derivative matrices for the specified grid, pre calculated.
                 
-    methods: calculate the derivative matrices for the specified grid
+    methods: to calculate the various derivative matrices for the specified grid
     
     """
     
@@ -267,7 +267,8 @@ class Derivatives :
                  
         return diss_matrix     
     
-    
+    # These values are derived in the file tests/DerivativeCalculations.ipynb using 
+    # Lagrange polynomials implemented in sympy
     def calculate_useful_values(self) :
         
         c = self.log_factor

@@ -12,13 +12,12 @@ class Grid :
     Represents the grid used in the evolution of the
     
     attributes: the size of the grid (max_r)
-                number of points num_points_r
-                the type of grid (logarithmic or fixed intervals - is_log_grid),
+                number of points num_points_r (includes ghost cells)
+                the log_factor, that controls the grid spacing, defaulted to 1
                 the grid spacing at the origin base_dx
-                the log_factor between intervals in dr
+                derivatives (a Derivatives class object)
                 
-    methods: calculates the derivative matrices for the specified grid, 
-             and the vector of r values etc
+    methods: to calculate boundary updates at the inner and outer boundaries
     
     """
     
