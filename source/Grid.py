@@ -33,7 +33,7 @@ class Grid :
             N = self.num_points_r - 4
             self.base_dx = self.max_r / ( (self.log_factor ** (N+1.0) - 1.0) /
                                           (self.log_factor - 1.0)             - 0.5)
-
+        
         # Define the vector of the r values and the intervals between them
         self.r_vector = np.zeros(self.num_points_r)
         self.dr_vector = np.zeros(self.num_points_r)
@@ -53,10 +53,6 @@ class Grid :
         for idx in np.arange(num_ghosts, a_num_points_r, 1) :
             self.dr_vector[idx] = self.dr_vector[idx-1] * self.log_factor
             self.r_vector[idx] = self.r_vector[idx-1] + self.dr_vector[idx]
-        
-        # For debugging
-        #print("The grid is  ", self.r_vector)
-        #print("The spacing is  ", self.dr_vector)
         
         self.derivatives = Derivatives(self.r_vector, self.dr_vector)
         self.calculate_interpolation_weights()

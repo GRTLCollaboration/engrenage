@@ -14,6 +14,7 @@ def get_initial_state(a_grid) :
     # For readability
     r = a_grid.r_vector
     N = a_grid.num_points_r
+    dx = a_grid.base_dx
     
     initial_state = np.zeros(NUM_VARS * N)
     [u,v,phi,hrr,htt,hpp,K,arr,att,app,lambdar,shiftr,br,lapse] = np.array_split(initial_state, NUM_VARS)
@@ -29,6 +30,7 @@ def get_initial_state(a_grid) :
     
     # set up grid in radial direction in areal polar coordinates
     dR = 0.01
+    assert dR < dx, 'your dx is smaller than the oscillaton data, use fewer points!'
     R = np.linspace(-dR*(length-1), dR*(length-1), num=(length*2-1))
     
     # find interpolating functions for the data
