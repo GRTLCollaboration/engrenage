@@ -5,22 +5,16 @@
 
 from source.uservariables import *
 from source.tensoralgebra import *
-from source.fourthorderderivatives import *
-from source.logderivatives import *
-from source.gridfunctions import *
+from source.Grid import *
 import numpy as np
 from scipy.interpolate import interp1d
 
-def get_initial_state(R, N_r, r_is_logarithmic) :
+def get_initial_state(a_grid) :
     
-    # Set up grid values
-    dx, N, r, logarithmic_dr = setup_grid(R, N_r, r_is_logarithmic)
-    
-    # predefine some userful quantities
-    oneoverlogdr = 1.0 / logarithmic_dr
-    oneoverlogdr2 = oneoverlogdr * oneoverlogdr
-    oneoverdx  = 1.0 / dx
-    oneoverdxsquared = oneoverdx * oneoverdx
+    # For readability
+    r = a_grid.r_vector
+    N = a_grid.num_points_r
+    dx = a_grid.base_dx
     
     initial_state = np.zeros(NUM_VARS * N)
     [u,v,phi,hrr,htt,hpp,K,arr,att,app,lambdar,shiftr,br,lapse] = np.array_split(initial_state, NUM_VARS)
@@ -36,6 +30,7 @@ def get_initial_state(R, N_r, r_is_logarithmic) :
     
     # set up grid in radial direction in areal polar coordinates
     dR = 0.01
+    assert dR < dx, 'your dx is smaller than the oscillaton data, use fewer points!'
     R = np.linspace(-dR*(length-1), dR*(length-1), num=(length*2-1))
     
     # find interpolating functions for the data
@@ -62,16 +57,11 @@ def get_initial_state(R, N_r, r_is_logarithmic) :
     hpp[:] = em4phi * gpp_over_r2sintheta - 1.0
     
     # overwrite inner cells using parity under r -> - r
-    fill_inner_boundary(initial_state, dx, N, r_is_logarithmic)
+    a_grid.fill_inner_boundary(initial_state)
     
-    if(r_is_logarithmic) :
-        dhrrdx = get_logdfdx(hrr, oneoverlogdr)
-        dhttdx = get_logdfdx(htt, oneoverlogdr)
-        dhppdx = get_logdfdx(hpp, oneoverlogdr)
-    else :
-        dhrrdx     = get_dfdx(hrr, oneoverdx)
-        dhttdx     = get_dfdx(htt, oneoverdx)
-        dhppdx     = get_dfdx(hpp, oneoverdx)
+    dhrrdx     = np.dot(a_grid.derivatives.d1_matrix, hrr)
+    dhttdx     = np.dot(a_grid.derivatives.d1_matrix, htt)
+    dhppdx     = np.dot(a_grid.derivatives.d1_matrix, hpp)
 
     # assign lambdar values
     h_tensor = np.array([hrr, htt, hpp])
@@ -87,9 +77,9 @@ def get_initial_state(R, N_r, r_is_logarithmic) :
     lambdar[:]   = Delta_U[i_r]
 
     # Fill boundary cells for lambdar
-    fill_outer_boundary_ivar(initial_state, dx, N, r_is_logarithmic, idx_lambdar)
+    a_grid.fill_outer_boundary_ivar(initial_state, idx_lambdar)
 
     # overwrite inner cells using parity under r -> - r
-    fill_inner_boundary_ivar(initial_state, dx, N, r_is_logarithmic, idx_lambdar)
+    a_grid.fill_inner_boundary_ivar(initial_state, idx_lambdar)
             
-    return r, initial_state
+    return initial_state

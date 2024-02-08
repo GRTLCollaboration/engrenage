@@ -5,23 +5,15 @@
 
 from source.uservariables import *
 from source.tensoralgebra import *
-from source.gridfunctions import *
-from source.fourthorderderivatives import *
-from source.logderivatives import *
 import numpy as np
 from scipy.interpolate import interp1d
 
 # This routine gives us something where phi = 0 initially but bar_R and lambda are non trivial
-def get_test_state_1(R, N_r, r_is_logarithmic = False) :
+def get_test_state_1(my_grid) :
     
-    # Set up grid values
-    dx, N, r, logarithmic_dr = setup_grid(R, N_r, r_is_logarithmic)
-    
-    # predefine some userful quantities
-    oneoverlogdr = 1.0 / logarithmic_dr
-    oneoverlogdr2 = oneoverlogdr * oneoverlogdr
-    oneoverdx  = 1.0 / dx
-    oneoverdxsquared = oneoverdx * oneoverdx
+    # For readability
+    r = my_grid.r_vector
+    N = my_grid.num_points_r
 
     test_state = np.zeros(NUM_VARS * N)
     [u,v,phi,hrr,htt,hpp,K,arr,att,app,lambdar,shiftr,br,lapse] = np.array_split(test_state, NUM_VARS)
@@ -49,16 +41,11 @@ def get_test_state_1(R, N_r, r_is_logarithmic = False) :
             test_state[ix]    = test_state[ix + offset]
 
     # overwrite inner cells using parity under r -> - r
-    fill_inner_boundary(test_state, dx, N, r_is_logarithmic)
+    my_grid.fill_inner_boundary(test_state)
 
-    if(r_is_logarithmic) :
-        dhrrdx = get_logdfdx(hrr, oneoverlogdr)
-        dhttdx = get_logdfdx(htt, oneoverlogdr)
-        dhppdx = get_logdfdx(hpp, oneoverlogdr)
-    else:
-        dhrrdx     = get_dfdx(hrr, oneoverdx)
-        dhttdx     = get_dfdx(htt, oneoverdx)
-        dhppdx     = get_dfdx(hpp, oneoverdx)
+    dhrrdx     = np.dot(my_grid.derivatives.d1_matrix, hrr)
+    dhttdx     = np.dot(my_grid.derivatives.d1_matrix, htt)
+    dhppdx     = np.dot(my_grid.derivatives.d1_matrix, hpp)
 
     h_tensor = np.array([hrr, htt, hpp])
     a_tensor = np.array([arr, att, app])
@@ -73,28 +60,22 @@ def get_test_state_1(R, N_r, r_is_logarithmic = False) :
     lambdar[:]   = Delta_U[i_r]
 
     # Fill boundary cells for lambdar
-    fill_outer_boundary_ivar(test_state, dx, N, r_is_logarithmic, idx_lambdar)
+    my_grid.fill_outer_boundary_ivar(test_state, idx_lambdar)
 
     # overwrite inner cells using parity under r -> - r
-    fill_inner_boundary_ivar(test_state, dx, N, r_is_logarithmic, idx_lambdar)
+    my_grid.fill_inner_boundary_ivar(test_state, idx_lambdar)
             
-    return r, test_state
+    return test_state
 
 # This routine gives us something where bar_R is trivial but phi is non trivial
-def get_test_state_2(R, N_r, r_is_logarithmic = False) :
+def get_test_state_2(my_grid) :
     
-    # Set up grid values
-    dx, N, r, logarithmic_dr = setup_grid(R, N_r, r_is_logarithmic)
-    
-    # predefine some userful quantities
-    oneoverlogdr = 1.0 / logarithmic_dr
-    oneoverlogdr2 = oneoverlogdr * oneoverlogdr
-    oneoverdx  = 1.0 / dx
-    oneoverdxsquared = oneoverdx * oneoverdx
+    # For readability
+    r = my_grid.r_vector
+    N = my_grid.num_points_r
     
     test_state = np.zeros(NUM_VARS * N)
     [u,v,phi,hrr,htt,hpp,K,arr,att,app,lambdar,shiftr,br,lapse] = np.array_split(test_state, NUM_VARS)    
-    
     # lapse and spatial metric
     lapse.fill(1.0)
     grr = 1.0 + r * r * np.exp(-r)
@@ -118,16 +99,11 @@ def get_test_state_2(R, N_r, r_is_logarithmic = False) :
             test_state[ix]    = test_state[ix + offset]
 
     # overwrite inner cells using parity under r -> - r
-    fill_inner_boundary(test_state, dx, N, r_is_logarithmic)
+    my_grid.fill_inner_boundary(test_state)
 
-    if(r_is_logarithmic) :
-        dhrrdx = get_logdfdx(hrr, oneoverlogdr)
-        dhttdx = get_logdfdx(htt, oneoverlogdr)
-        dhppdx = get_logdfdx(hpp, oneoverlogdr)
-    else:
-        dhrrdx     = get_dfdx(hrr, oneoverdx)
-        dhttdx     = get_dfdx(htt, oneoverdx)
-        dhppdx     = get_dfdx(hpp, oneoverdx)     
+    dhrrdx     = np.dot(my_grid.derivatives.d1_matrix, hrr)
+    dhttdx     = np.dot(my_grid.derivatives.d1_matrix, htt)
+    dhppdx     = np.dot(my_grid.derivatives.d1_matrix, hpp)    
 
     h_tensor = np.array([hrr, htt, hpp])
     a_tensor = np.array([arr, att, app])
@@ -142,27 +118,22 @@ def get_test_state_2(R, N_r, r_is_logarithmic = False) :
     lambdar[:]   = Delta_U[i_r]
 
     # Fill boundary cells for lambdar
-    fill_outer_boundary_ivar(test_state, dx, N, r_is_logarithmic, idx_lambdar)
+    my_grid.fill_outer_boundary_ivar(test_state, idx_lambdar)
 
     # overwrite inner cells using parity under r -> - r
-    fill_inner_boundary_ivar(test_state, dx, N, r_is_logarithmic, idx_lambdar)
+    my_grid.fill_inner_boundary_ivar(test_state, idx_lambdar)
             
-    return r, test_state
+    return test_state
 
 # This routine gives us the Schwazschild metric in the original ingoing Eddington Finkelstien coords
 # that is r = r_schwarzschild and t = t_schwarzschild - (r-r*)
 # For this the RHS should be zero, but unlike in Schwarschild coords Kij and the shift are non trivial
 # (thanks to Ulrich Sperhake for suggesting this test)
-def get_test_state_bh(R, N_r, r_is_logarithmic = True) :
-
-    # Set up grid values
-    dx, N, r, logarithmic_dr = setup_grid(R, N_r, r_is_logarithmic)
+def get_test_state_bh(my_grid) :
     
-    # predefine some userful quantities
-    oneoverlogdr = 1.0 / logarithmic_dr
-    oneoverlogdr2 = oneoverlogdr * oneoverlogdr
-    oneoverdx  = 1.0 / dx
-    oneoverdxsquared = oneoverdx * oneoverdx
+    # For readability
+    r = my_grid.r_vector
+    N = my_grid.num_points_r
     
     test_state = np.zeros(NUM_VARS * N)
     [u,v,phi,hrr,htt,hpp,K,arr,att,app,lambdar,shiftr,br,lapse] = np.array_split(test_state, NUM_VARS)
@@ -200,16 +171,11 @@ def get_test_state_bh(R, N_r, r_is_logarithmic = True) :
     app[:] = em4phi * (Kpp_over_r2sintheta - 1.0/3.0 * gpp_over_r2sintheta * K)
        
     # overwrite inner cells using parity under r -> - r
-    fill_inner_boundary(test_state, dx, N, r_is_logarithmic)
+    my_grid.fill_inner_boundary(test_state)
 
-    if(r_is_logarithmic) :
-        dhrrdx = get_logdfdx(hrr, oneoverlogdr)
-        dhttdx = get_logdfdx(htt, oneoverlogdr)
-        dhppdx = get_logdfdx(hpp, oneoverlogdr)
-    else:
-        dhrrdx     = get_dfdx(hrr, oneoverdx)
-        dhttdx     = get_dfdx(htt, oneoverdx)
-        dhppdx     = get_dfdx(hpp, oneoverdx)  
+    dhrrdx     = np.dot(my_grid.derivatives.d1_matrix, hrr)
+    dhttdx     = np.dot(my_grid.derivatives.d1_matrix, htt)
+    dhppdx     = np.dot(my_grid.derivatives.d1_matrix, hpp)
     
     h_tensor = np.array([hrr, htt, hpp])
     a_tensor = np.array([arr, att, app])
@@ -224,9 +190,9 @@ def get_test_state_bh(R, N_r, r_is_logarithmic = True) :
     lambdar[:]   = Delta_U[i_r]
 
     # Fill boundary cells for lambdar
-    fill_outer_boundary_ivar(test_state, dx, N, r_is_logarithmic, idx_lambdar)
+    my_grid.fill_outer_boundary_ivar(test_state, idx_lambdar)
 
     # overwrite inner cells using parity under r -> - r
-    fill_inner_boundary_ivar(test_state, dx, N, r_is_logarithmic, idx_lambdar)
+    my_grid.fill_inner_boundary_ivar(test_state, idx_lambdar)
             
-    return r, test_state
+    return test_state

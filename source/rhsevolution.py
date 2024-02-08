@@ -6,28 +6,21 @@ import time
 
 # homemade code
 from source.uservariables import *
-from source.gridfunctions import *
-from source.fourthorderderivatives import *
-from source.logderivatives import *
 from source.tensoralgebra import *
 from source.mymatter import *
 from source.bssnrhs import *
-    
+from source.Grid import *
+
 # function that returns the rhs for each of the field vars
 # see further details in https://github.com/GRChombo/engrenage/wiki/Useful-code-background
-def get_rhs(t_i, current_state, R, N_r, r_is_logarithmic, eta, progress_bar, time_state) :
+def get_rhs(t_i, current_state, my_grid, eta, progress_bar, time_state) :
 
     # Uncomment for timing and tracking progress
     # start_time = time.time()
     
-    # Set up grid values
-    dx, N, r, logarithmic_dr = setup_grid(R, N_r, r_is_logarithmic)
-    
-    # predefine some userful quantities
-    oneoverlogdr = 1.0 / logarithmic_dr
-    oneoverlogdr2 = oneoverlogdr * oneoverlogdr
-    oneoverdx  = 1.0 / dx
-    oneoverdxsquared = oneoverdx * oneoverdx
+    # For readability
+    r = my_grid.r_vector
+    N = my_grid.num_points_r
     
     # this is where the rhs will go
     rhs = np.zeros_like(current_state) 
@@ -49,123 +42,62 @@ def get_rhs(t_i, current_state, R, N_r, r_is_logarithmic, eta, progress_bar, tim
     htt = (1.0 + htt)/ np.power(determinant,1./3) - 1.0
     hpp = (1.0 + hpp)/ np.power(determinant,1./3) - 1.0     
     ####################################################################################################
-
-    # get the various derivs that we need to evolve things
-    if(r_is_logarithmic) : #take logarithmic derivatives
-        
-        # second derivatives
-        d2udx2     = get_logd2fdx2(u, oneoverlogdr2)
-        d2phidx2   = get_logd2fdx2(phi, oneoverlogdr2)
-        d2hrrdx2   = get_logd2fdx2(hrr, oneoverlogdr2)
-        d2httdx2   = get_logd2fdx2(htt, oneoverlogdr2)
-        d2hppdx2   = get_logd2fdx2(hpp, oneoverlogdr2)    
-        d2lapsedx2   = get_logd2fdx2(lapse, oneoverlogdr2) 
-        d2shiftrdx2   = get_logd2fdx2(shiftr, oneoverlogdr2) 
-        
-        # first derivatives        
-        dudx       = get_logdfdx(u, oneoverlogdr)
-        dvdx       = get_logdfdx(v, oneoverlogdr)
-        dphidx     = get_logdfdx(phi, oneoverlogdr)
-        dhrrdx     = get_logdfdx(hrr, oneoverlogdr)
-        dhttdx     = get_logdfdx(htt, oneoverlogdr)
-        dhppdx     = get_logdfdx(hpp, oneoverlogdr)
-        darrdx     = get_logdfdx(arr, oneoverlogdr)
-        dattdx     = get_logdfdx(att, oneoverlogdr)
-        dappdx     = get_logdfdx(app, oneoverlogdr)
-        dKdx       = get_logdfdx(K, oneoverlogdr)
-        dlambdardx = get_logdfdx(lambdar, oneoverlogdr)
-        dbrdx      = get_logdfdx(br, oneoverlogdr)
-        dshiftrdx  = get_logdfdx(shiftr, oneoverlogdr)
-        dlapsedx   = get_logdfdx(lapse, oneoverlogdr)
-
-        # first derivatives - advec left and right
-        dudx_advec_L       = get_logdfdx_advec_L(u, oneoverlogdr)
-        dvdx_advec_L       = get_logdfdx_advec_L(v, oneoverlogdr)
-        dphidx_advec_L     = get_logdfdx_advec_L(phi, oneoverlogdr)
-        dhrrdx_advec_L     = get_logdfdx_advec_L(hrr, oneoverlogdr)
-        dhttdx_advec_L     = get_logdfdx_advec_L(htt, oneoverlogdr)
-        dhppdx_advec_L     = get_logdfdx_advec_L(hpp, oneoverlogdr)
-        darrdx_advec_L     = get_logdfdx_advec_L(arr, oneoverlogdr)
-        dattdx_advec_L     = get_logdfdx_advec_L(att, oneoverlogdr)
-        dappdx_advec_L     = get_logdfdx_advec_L(app, oneoverlogdr)
-        dKdx_advec_L       = get_logdfdx_advec_L(K, oneoverlogdr)
-        dlambdardx_advec_L = get_logdfdx_advec_L(lambdar, oneoverlogdr)
-        dshiftrdx_advec_L  = get_logdfdx_advec_L(shiftr, oneoverlogdr)
-        dbrdx_advec_L      = get_logdfdx_advec_L(br, oneoverlogdr)
-        dlapsedx_advec_L   = get_logdfdx_advec_L(lapse, oneoverlogdr)
     
-        dudx_advec_R       = get_logdfdx_advec_R(u, oneoverlogdr)
-        dvdx_advec_R       = get_logdfdx_advec_R(v, oneoverlogdr)
-        dphidx_advec_R     = get_logdfdx_advec_R(phi, oneoverlogdr)
-        dhrrdx_advec_R     = get_logdfdx_advec_R(hrr, oneoverlogdr)
-        dhttdx_advec_R     = get_logdfdx_advec_R(htt, oneoverlogdr)
-        dhppdx_advec_R     = get_logdfdx_advec_R(hpp, oneoverlogdr)
-        darrdx_advec_R     = get_logdfdx_advec_R(arr, oneoverlogdr)
-        dattdx_advec_R     = get_logdfdx_advec_R(att, oneoverlogdr)
-        dappdx_advec_R     = get_logdfdx_advec_R(app, oneoverlogdr)
-        dKdx_advec_R       = get_logdfdx_advec_R(K, oneoverlogdr)
-        dlambdardx_advec_R = get_logdfdx_advec_R(lambdar, oneoverlogdr)
-        dshiftrdx_advec_R  = get_logdfdx_advec_R(shiftr, oneoverlogdr)
-        dbrdx_advec_R      = get_logdfdx_advec_R(br, oneoverlogdr)
-        dlapsedx_advec_R   = get_logdfdx_advec_R(lapse, oneoverlogdr)         
-        
-    else :
-        
-        # second derivatives
-        d2udx2     = get_d2fdx2(u, oneoverdxsquared)
-        d2phidx2   = get_d2fdx2(phi, oneoverdxsquared)
-        d2hrrdx2   = get_d2fdx2(hrr, oneoverdxsquared)
-        d2httdx2   = get_d2fdx2(htt, oneoverdxsquared)
-        d2hppdx2   = get_d2fdx2(hpp, oneoverdxsquared)
-        d2lapsedx2 = get_d2fdx2(lapse, oneoverdxsquared)
-        d2shiftrdx2 = get_d2fdx2(shiftr, oneoverdxsquared)
+    # second derivatives
+    d2udx2      = np.dot(my_grid.derivatives.d2_matrix, u     )
+    d2phidx2    = np.dot(my_grid.derivatives.d2_matrix, phi   )
+    d2hrrdx2    = np.dot(my_grid.derivatives.d2_matrix, hrr   )
+    d2httdx2    = np.dot(my_grid.derivatives.d2_matrix, htt   )
+    d2hppdx2    = np.dot(my_grid.derivatives.d2_matrix, hpp   )
+    d2lapsedx2  = np.dot(my_grid.derivatives.d2_matrix, lapse )
+    d2shiftrdx2 = np.dot(my_grid.derivatives.d2_matrix, shiftr)
     
-        # first derivatives
-        dudx       = get_dfdx(u, oneoverdx)
-        dvdx       = get_dfdx(v, oneoverdx)
-        dphidx     = get_dfdx(phi, oneoverdx)
-        dhrrdx     = get_dfdx(hrr, oneoverdx)
-        dhttdx     = get_dfdx(htt, oneoverdx)
-        dhppdx     = get_dfdx(hpp, oneoverdx)
-        darrdx     = get_dfdx(arr, oneoverdx)
-        dattdx     = get_dfdx(att, oneoverdx)
-        dappdx     = get_dfdx(app, oneoverdx)
-        dKdx       = get_dfdx(K, oneoverdx)
-        dlambdardx = get_dfdx(lambdar, oneoverdx)
-        dshiftrdx  = get_dfdx(shiftr, oneoverdx)
-        dbrdx      = get_dfdx(br, oneoverdx)
-        dlapsedx   = get_dfdx(lapse, oneoverdx)
+    # first derivatives
+    dudx       = np.dot(my_grid.derivatives.d1_matrix, u      )
+    dvdx       = np.dot(my_grid.derivatives.d1_matrix, v      )
+    dphidx     = np.dot(my_grid.derivatives.d1_matrix, phi    )
+    dhrrdx     = np.dot(my_grid.derivatives.d1_matrix, hrr    )
+    dhttdx     = np.dot(my_grid.derivatives.d1_matrix, htt    )
+    dhppdx     = np.dot(my_grid.derivatives.d1_matrix, hpp    )
+    darrdx     = np.dot(my_grid.derivatives.d1_matrix, arr    )
+    dattdx     = np.dot(my_grid.derivatives.d1_matrix, att    )
+    dappdx     = np.dot(my_grid.derivatives.d1_matrix, app    )
+    dKdx       = np.dot(my_grid.derivatives.d1_matrix, K      )
+    dlambdardx = np.dot(my_grid.derivatives.d1_matrix, lambdar)
+    dshiftrdx  = np.dot(my_grid.derivatives.d1_matrix, shiftr )
+    dbrdx      = np.dot(my_grid.derivatives.d1_matrix, br     )
+    dlapsedx   = np.dot(my_grid.derivatives.d1_matrix, lapse  )
     
-        # first derivatives - advec left and right
-        dudx_advec_L       = get_dfdx_advec_L(u, oneoverdx)
-        dvdx_advec_L       = get_dfdx_advec_L(v, oneoverdx)
-        dphidx_advec_L     = get_dfdx_advec_L(phi, oneoverdx)
-        dhrrdx_advec_L     = get_dfdx_advec_L(hrr, oneoverdx)
-        dhttdx_advec_L     = get_dfdx_advec_L(htt, oneoverdx)
-        dhppdx_advec_L     = get_dfdx_advec_L(hpp, oneoverdx)
-        darrdx_advec_L     = get_dfdx_advec_L(arr, oneoverdx)
-        dattdx_advec_L     = get_dfdx_advec_L(att, oneoverdx)
-        dappdx_advec_L     = get_dfdx_advec_L(app, oneoverdx)
-        dKdx_advec_L       = get_dfdx_advec_L(K, oneoverdx)
-        dlambdardx_advec_L = get_dfdx_advec_L(lambdar, oneoverdx)
-        dshiftrdx_advec_L  = get_dfdx_advec_L(shiftr, oneoverdx)
-        dbrdx_advec_L      = get_dfdx_advec_L(br, oneoverdx)
-        dlapsedx_advec_L   = get_dfdx_advec_L(lapse, oneoverdx)
+    # first derivatives - advec left and right
+    dudx_advec_L       = np.dot(my_grid.derivatives.d_advec_matrix_left, u      )
+    dvdx_advec_L       = np.dot(my_grid.derivatives.d_advec_matrix_left, v      )
+    dphidx_advec_L     = np.dot(my_grid.derivatives.d_advec_matrix_left, phi    )
+    dhrrdx_advec_L     = np.dot(my_grid.derivatives.d_advec_matrix_left, hrr    )
+    dhttdx_advec_L     = np.dot(my_grid.derivatives.d_advec_matrix_left, htt    )
+    dhppdx_advec_L     = np.dot(my_grid.derivatives.d_advec_matrix_left, hpp    )
+    darrdx_advec_L     = np.dot(my_grid.derivatives.d_advec_matrix_left, arr    )
+    dattdx_advec_L     = np.dot(my_grid.derivatives.d_advec_matrix_left, att    )
+    dappdx_advec_L     = np.dot(my_grid.derivatives.d_advec_matrix_left, app    )
+    dKdx_advec_L       = np.dot(my_grid.derivatives.d_advec_matrix_left, K      )
+    dlambdardx_advec_L = np.dot(my_grid.derivatives.d_advec_matrix_left, lambdar)
+    dshiftrdx_advec_L  = np.dot(my_grid.derivatives.d_advec_matrix_left, shiftr )
+    dbrdx_advec_L      = np.dot(my_grid.derivatives.d_advec_matrix_left, br     )
+    dlapsedx_advec_L   = np.dot(my_grid.derivatives.d_advec_matrix_left, lapse  )
     
-        dudx_advec_R       = get_dfdx_advec_R(u, oneoverdx)
-        dvdx_advec_R       = get_dfdx_advec_R(v, oneoverdx)
-        dphidx_advec_R     = get_dfdx_advec_R(phi, oneoverdx)
-        dhrrdx_advec_R     = get_dfdx_advec_R(hrr, oneoverdx)
-        dhttdx_advec_R     = get_dfdx_advec_R(htt, oneoverdx)
-        dhppdx_advec_R     = get_dfdx_advec_R(hpp, oneoverdx)
-        darrdx_advec_R     = get_dfdx_advec_R(arr, oneoverdx)
-        dattdx_advec_R     = get_dfdx_advec_R(att, oneoverdx)
-        dappdx_advec_R     = get_dfdx_advec_R(app, oneoverdx)
-        dKdx_advec_R       = get_dfdx_advec_R(K, oneoverdx)
-        dlambdardx_advec_R = get_dfdx_advec_R(lambdar, oneoverdx)
-        dshiftrdx_advec_R  = get_dfdx_advec_R(shiftr, oneoverdx)
-        dbrdx_advec_R      = get_dfdx_advec_R(br, oneoverdx)
-        dlapsedx_advec_R   = get_dfdx_advec_R(lapse, oneoverdx)  
+    dudx_advec_R       = np.dot(my_grid.derivatives.d_advec_matrix_right, u      )
+    dvdx_advec_R       = np.dot(my_grid.derivatives.d_advec_matrix_right, v      )
+    dphidx_advec_R     = np.dot(my_grid.derivatives.d_advec_matrix_right, phi    )
+    dhrrdx_advec_R     = np.dot(my_grid.derivatives.d_advec_matrix_right, hrr    )
+    dhttdx_advec_R     = np.dot(my_grid.derivatives.d_advec_matrix_right, htt    )
+    dhppdx_advec_R     = np.dot(my_grid.derivatives.d_advec_matrix_right, hpp    )
+    darrdx_advec_R     = np.dot(my_grid.derivatives.d_advec_matrix_right, arr    )
+    dattdx_advec_R     = np.dot(my_grid.derivatives.d_advec_matrix_right, att    )
+    dappdx_advec_R     = np.dot(my_grid.derivatives.d_advec_matrix_right, app    )
+    dKdx_advec_R       = np.dot(my_grid.derivatives.d_advec_matrix_right, K      )
+    dlambdardx_advec_R = np.dot(my_grid.derivatives.d_advec_matrix_right, lambdar)
+    dshiftrdx_advec_R  = np.dot(my_grid.derivatives.d_advec_matrix_right, shiftr )
+    dbrdx_advec_R      = np.dot(my_grid.derivatives.d_advec_matrix_right, br     )
+    dlapsedx_advec_R   = np.dot(my_grid.derivatives.d_advec_matrix_right, lapse  ) 
         
     ####################################################################################################
     
@@ -304,28 +236,23 @@ def get_rhs(t_i, current_state, R, N_r, r_is_logarithmic, eta, progress_bar, tim
  #################################################################################################### 
             
     # finally add Kreiss Oliger dissipation which removes noise at frequency of grid resolution
-    sigma = 10.0 # kreiss-oliger damping coefficient, max_step should be limited to 0.1 R/N_r
+    sigma = 1.0 # kreiss-oliger damping coefficient, max_step should be limited to avoid instability
     
     diss = np.zeros_like(current_state)
     for ivar in range(0, NUM_VARS) :
         ivar_values = current_state[(ivar)*N:(ivar+1)*N]
-        ivar_diss = np.zeros_like(ivar_values)
-        if(r_is_logarithmic) :
-            ivar_diss = get_logdissipation(ivar_values, oneoverlogdr, sigma)
-        else : 
-            ivar_diss = get_dissipation(ivar_values, oneoverdx, sigma)
+        ivar_diss = np.dot(my_grid.derivatives.d_dissipation_matrix, ivar_values) 
         diss[(ivar)*N:(ivar+1)*N] = ivar_diss
-    rhs += diss
+    rhs += sigma * diss
     #################################################################################################### 
     
-    # see gridfunctions for these, or https://github.com/KAClough/BabyGRChombo/wiki/Useful-code-background
+    # see https://github.com/KAClough/BabyGRChombo/wiki/Useful-code-background
     
     # overwrite outer boundaries with extrapolation (order specified in uservariables.py)
-    fill_outer_boundary(rhs, dx, N, r_is_logarithmic)
+    my_grid.fill_outer_boundary(rhs)
 
     # overwrite inner cells using parity under r -> - r
-    fill_inner_boundary(rhs, dx, N, r_is_logarithmic)
-                
+    my_grid.fill_inner_boundary(rhs)            
     #################################################################################################### 
     
     # Some code for checking timing and progress output

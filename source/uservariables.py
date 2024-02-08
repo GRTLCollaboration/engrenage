@@ -1,5 +1,8 @@
 #uservariables.py
 
+# hard code number of ghosts to 3 here
+num_ghosts = 3
+
 # This file provides the list of (rescaled) variables to be evolved and
 # assigns each one an index and its parity
 # For description of the data structure see https://github.com/GRChombo/engrenage/wiki/Useful-code-background
@@ -32,8 +35,7 @@ parity = [1, 1,           # u, v
           -1, -1, -1, 1]  # lambda^r, shift^r, b^r, lapse
 
 # scaling at larger r as power of r, i.e. var ~ r^asymptotic_power
-# currently only for linear r
 asymptotic_power =   [0., 0.,                # u, v
                       -1., -1., -1., -1.,    # phi, h
-                      -2., -2., -2., -2.,    # K, a
+                      -1., -2., -2., -2.,    # K, a
                       -2., -1., -1., 0.]     # lambda^r, shift^r, b^r, lapse
