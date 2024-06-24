@@ -1,4 +1,4 @@
-# bhinitialconditions.py
+# bhinitialconditionswithSF.py
 
 # set the initial conditions for all the variables for an isotropic Schwarzschild BH
 # see further details in https://github.com/GRChombo/engrenage/wiki/Running-the-black-hole-example
@@ -6,6 +6,7 @@
 from source.uservariables import *
 from source.tensoralgebra import *
 from source.Grid import *
+from source.mymatter import * # Need the scalar mass
 import numpy as np
 from scipy.interpolate import interp1d
 
@@ -36,6 +37,13 @@ def get_initial_state(a_grid) :
     hpp[:] = em4phi * gpp_over_r2sintheta - 1.0    
     lapse.fill(1.0)
     #lapse[:] = em4phi # optional, to pre collapse the lapse
+
+    # Set the scalar field value
+    u.fill(1.0e-6)
+    # To solve the constraints K^2 = 16\pi rho = 16\pi V(u)
+    # In practise this doesn't make a difference as the error is less than the
+    # derivatives, but it is good practise to think of it!
+    K[:] = np.sqrt(24.0 * np.pi * V_of_u(u))
     
     # overwrite inner cells using parity under r -> - r
     a_grid.fill_inner_boundary(initial_state)
