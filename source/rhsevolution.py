@@ -174,7 +174,14 @@ def get_rhs(t_i, current_state, my_grid, eta, progress_bar, time_state) :
     # eta is the 1+log slicing damping coefficient - of order 1/M_adm of spacetime        
     rhs_br[:]     = 0.75 * rhs_lambdar - eta * br
     rhs_shiftr[:] = br
-    rhs_lapse[:]  = - 2.0 * lapse * K        
+
+    # 1 + log slicing old lapse condition
+    #rhs_lapse[:]  = - 2.0 * lapse * K
+    
+    # Implement the new shock avoiding lapse condition from
+    # https://inspirehep.net/literature/2111279
+    kappa_lapse = 0.05
+    rhs_lapse[:]  = - (lapse * lapse + kappa_lapse) * K
         
     # Add advection to time derivatives (this is the bit coming from the Lie derivative)
     # Note the additional advection terms from rescaling for tensors
