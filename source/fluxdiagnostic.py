@@ -1,4 +1,4 @@
-#hamdiagnostics.py
+#fluxdiagnostics.py
 
 # python modules
 import numpy as np
@@ -10,10 +10,10 @@ from source.Grid import *
 from source.tensoralgebra import *
 from source.mymatter import *
 
-# The diagnostic function returns the Hamiltonian constraint over the grid
+# The diagnostic function returns the flux as a function of r over the grid
 # it takes in the solution of the evolution, which is the state vector at every
-# time step, and returns the spatial profile Ham(r) at each time step
-def get_Ham_diagnostic(solutions_over_time, t, my_grid) :
+# time step, and returns the spatial profile F(r) at each time step
+def get_Flux_diagnostic(solutions_over_time, t, my_grid) :
 
     start = time.time()
     
@@ -21,7 +21,7 @@ def get_Ham_diagnostic(solutions_over_time, t, my_grid) :
     r = my_grid.r_vector
     N = my_grid.num_points_r
     
-    Ham = []
+    flux = []
     num_times = int(np.size(solutions_over_time) / (NUM_VARS * N))
     
     # unpack the vectors at each time
@@ -82,40 +82,21 @@ def get_Ham_diagnostic(solutions_over_time, t, my_grid) :
         bar_gamma_LL = get_metric(r, h)
         bar_gamma_UU = get_inverse_metric(r, h)
         
-        # \bar A_ij, \bar A^ij and the trace A_i^i, then Asquared = \bar A_ij \bar A^ij
-        bar_A_LL = get_A_LL(r, a)
-        bar_A_UU = get_A_UU(a, r_gamma_UU, r)
-        traceA   = get_trace_A(a, r_gamma_UU)
-        Asquared = get_Asquared(a, r_gamma_UU)
-        
-        # The connections Delta^i, Delta^i_jk and Delta_ijk
-        Delta_U, Delta_ULL, Delta_LLL  = get_connection(r, bar_gamma_UU, bar_gamma_LL, h, dhdr)
-        bar_Rij = get_ricci_tensor(r, h, dhdr, d2hdr2, lambdar, dlambdardx, 
-                                       Delta_U, Delta_ULL, Delta_LLL, bar_gamma_UU, bar_gamma_LL)
-        bar_Rij_diag = np.array([bar_Rij[i_r][i_r],bar_Rij[i_t][i_t],bar_Rij[i_p][i_p]])
-        bar_R   = get_trace(bar_Rij_diag, bar_gamma_UU)
-        
         # Matter sources
-        matter_rho            = get_rho(u, dudx, v, bar_gamma_UU, em4phi )
+        matter_Si  = get_Si(u, dudx, v)
 
         # End of: Calculate some useful quantities, now start diagnostic
         #################################################################
 
-        # Get the Ham constraint eqn (13) of Baumgarte https://arxiv.org/abs/1211.6632
-        Ham_i = (  two_thirds * K * K - Asquared
-                         + em4phi * ( bar_R
-                                      - 8.0 * bar_gamma_UU[i_r][:] * (dphidx * dphidx 
-                                                                        + d2phidx2)
-               # These terms come from \bar\Gamma^r d_r \phi from the \bar D^2 \phi term
-                                      + 8.0 * bar_gamma_UU[i_t][:] 
-                                            * flat_chris[i_r][i_t][i_t] * dphidx
-                                      + 8.0 * bar_gamma_UU[i_p][:] 
-                                            * flat_chris[i_r][i_p][i_p] * dphidx
-                                      + 8.0 * Delta_U[i_r] * dphidx)
-                         - 2.0 * eight_pi_G * matter_rho ) 
+        # First raise the index on r
+        Sr_up =  em4phi * bar_gamma_UU[i_r][:] * matter_Si[i_r]
+        sqrt_det_gamma = np.exp(6.0*phi) * r * r
         
-        # Add the Ham value to the output
-        Ham.append(Ham_i)
+        # Get the flux F = 4\pi sqrt(det_gamma) S^r
+        flux_i = Sr_up * 4.0 * np.pi * sqrt_det_gamma
+        
+        # Add the flux value to the output
+        flux.append(flux_i)
         
     # end of iteration over time  
     #########################################################################
@@ -123,4 +104,4 @@ def get_Ham_diagnostic(solutions_over_time, t, my_grid) :
     end = time.time()
     #print("time at t= ", t_i, " is, ", end-start)
     
-    return Ham
+    return flux
