@@ -7,14 +7,15 @@ from source.tensoralgebra import *
 
 # params for matter
 scalar_mu = 1.0 # this is an inverse length scale related to the scalar compton wavelength
+scalar_lambda = 0.0 # dimensionless in geometric units
 
 # The scalar potential
 def V_of_u(u) :
-    return 0.5 * scalar_mu * scalar_mu * u * u
+    return 0.5 * scalar_mu * scalar_mu * u * u * (1.0 + 0.5 * scalar_lambda * u * u)
 
 # Derivative of scalar potential
 def dVdu(u) :
-    return scalar_mu * scalar_mu * u
+    return scalar_mu * scalar_mu * u * (1.0 + scalar_lambda * u * u)
 
 def get_matter_rhs(u, v, dudr, d2udr2, r_gamma_UU, em4phi, 
                    dphidr, K, lapse, dlapsedr, r_conformal_chris) :
