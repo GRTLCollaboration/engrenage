@@ -3,20 +3,27 @@
 # File providing test data for the tests - these are solutions where the curvature quantities are known
 # so provide a test that everything is working ok
 
+import  numpy as np
+
+from source.grid import Grid
 from source.uservariables import *
 from source.tensoralgebra import *
-import numpy as np
-from scipy.interpolate import interp1d
+
 
 # This routine gives us something where phi = 0 initially but bar_R and lambda are non trivial
-def get_test_state_1(my_grid) :
+def get_test_state_1(grid: Grid):
     
     # For readability
-    r = my_grid.r_vector
-    N = my_grid.num_points_r
+    r = grid.r
+    N = grid.num_points
 
-    test_state = np.zeros(NUM_VARS * N)
-    [u,v,phi,hrr,htt,hpp,K,arr,att,app,lambdar,shiftr,br,lapse] = np.array_split(test_state, NUM_VARS)
+    test_state = np.zeros((NUM_VARS, N))
+    (
+        u, v,
+        phi, hrr, htt, hpp,
+        K, arr, att, app,
+        lambdar, shiftr, br, lapse,
+    ) = test_state
     
     # lapse and spatial metric
     lapse.fill(1.0)
@@ -41,41 +48,43 @@ def get_test_state_1(my_grid) :
             test_state[ix]    = test_state[ix + offset]
 
     # overwrite inner cells using parity under r -> - r
-    my_grid.fill_inner_boundary(test_state)
-
-    dhrrdx     = np.dot(my_grid.derivatives.d1_matrix, hrr)
-    dhttdx     = np.dot(my_grid.derivatives.d1_matrix, htt)
-    dhppdx     = np.dot(my_grid.derivatives.d1_matrix, hpp)
+    grid.fill_inner_boundary(test_state)
 
     h_tensor = np.array([hrr, htt, hpp])
-    a_tensor = np.array([arr, att, app])
-    dhdr   = np.array([dhrrdx, dhttdx, dhppdx])
+    dh_dr = grid.get_first_derivative(h_tensor)
         
     # (unscaled) \bar\gamma_ij and \bar\gamma^ij
     bar_gamma_LL = get_metric(r, h_tensor)
     bar_gamma_UU = get_inverse_metric(r, h_tensor)
         
     # The connections Delta^i, Delta^i_jk and Delta_ijk
-    Delta_U, Delta_ULL, Delta_LLL  = get_connection(r, bar_gamma_UU, bar_gamma_LL, h_tensor, dhdr)
+    Delta_U, Delta_ULL, Delta_LLL  = get_connection(r, bar_gamma_UU, bar_gamma_LL, h_tensor, dh_dr)
     lambdar[:]   = Delta_U[i_r]
 
     # Fill boundary cells for lambdar
-    my_grid.fill_outer_boundary_ivar(test_state, idx_lambdar)
+    grid.fill_outer_boundary(test_state, [idx_lambdar])
 
     # overwrite inner cells using parity under r -> - r
-    my_grid.fill_inner_boundary_ivar(test_state, idx_lambdar)
+    grid.fill_inner_boundary(test_state, [idx_lambdar])
             
-    return test_state
+    return test_state.reshape(-1)
+
 
 # This routine gives us something where bar_R is trivial but phi is non trivial
-def get_test_state_2(my_grid) :
+def get_test_state_2(grid: Grid):
     
     # For readability
-    r = my_grid.r_vector
-    N = my_grid.num_points_r
-    
-    test_state = np.zeros(NUM_VARS * N)
-    [u,v,phi,hrr,htt,hpp,K,arr,att,app,lambdar,shiftr,br,lapse] = np.array_split(test_state, NUM_VARS)    
+    r = grid.r
+    N = grid.num_points
+
+    test_state = np.zeros((NUM_VARS, N))
+    (
+        u, v,
+        phi, hrr, htt, hpp,
+        K, arr, att, app,
+        lambdar, shiftr, br, lapse,
+    ) = test_state
+
     # lapse and spatial metric
     lapse.fill(1.0)
     grr = 1.0 + r * r * np.exp(-r)
@@ -99,44 +108,45 @@ def get_test_state_2(my_grid) :
             test_state[ix]    = test_state[ix + offset]
 
     # overwrite inner cells using parity under r -> - r
-    my_grid.fill_inner_boundary(test_state)
-
-    dhrrdx     = np.dot(my_grid.derivatives.d1_matrix, hrr)
-    dhttdx     = np.dot(my_grid.derivatives.d1_matrix, htt)
-    dhppdx     = np.dot(my_grid.derivatives.d1_matrix, hpp)    
+    grid.fill_inner_boundary(test_state)
 
     h_tensor = np.array([hrr, htt, hpp])
-    a_tensor = np.array([arr, att, app])
-    dhdr   = np.array([dhrrdx, dhttdx, dhppdx])
+    dh_dr = grid.get_first_derivative(h_tensor)
         
     # (unscaled) \bar\gamma_ij and \bar\gamma^ij
     bar_gamma_LL = get_metric(r, h_tensor)
     bar_gamma_UU = get_inverse_metric(r, h_tensor)
         
     # The connections Delta^i, Delta^i_jk and Delta_ijk
-    Delta_U, Delta_ULL, Delta_LLL  = get_connection(r, bar_gamma_UU, bar_gamma_LL, h_tensor, dhdr)
+    Delta_U, Delta_ULL, Delta_LLL  = get_connection(r, bar_gamma_UU, bar_gamma_LL, h_tensor, dh_dr)
     lambdar[:]   = Delta_U[i_r]
 
     # Fill boundary cells for lambdar
-    my_grid.fill_outer_boundary_ivar(test_state, idx_lambdar)
+    grid.fill_outer_boundary(test_state, [idx_lambdar])
 
     # overwrite inner cells using parity under r -> - r
-    my_grid.fill_inner_boundary_ivar(test_state, idx_lambdar)
+    grid.fill_inner_boundary(test_state, [idx_lambdar])
             
-    return test_state
+    return test_state.reshape(-1)
+
 
 # This routine gives us the Schwazschild metric in the original ingoing Eddington Finkelstien coords
 # that is r = r_schwarzschild and t = t_schwarzschild - (r-r*)
 # For this the RHS should be zero, but unlike in Schwarschild coords Kij and the shift are non trivial
 # (thanks to Ulrich Sperhake for suggesting this test)
-def get_test_state_bh(my_grid) :
+def get_test_state_bh(grid: Grid):
     
     # For readability
-    r = my_grid.r_vector
-    N = my_grid.num_points_r
+    r = grid.r
+    N = grid.num_points
     
-    test_state = np.zeros(NUM_VARS * N)
-    [u,v,phi,hrr,htt,hpp,K,arr,att,app,lambdar,shiftr,br,lapse] = np.array_split(test_state, NUM_VARS)
+    test_state = np.zeros((NUM_VARS, N))
+    (
+        u, v,
+        phi, hrr, htt, hpp,
+        K, arr, att, app,
+        lambdar, shiftr, br, lapse,
+    ) = test_state
     GM = 1.0
     
     # lapse, shift and spatial metric
@@ -171,28 +181,23 @@ def get_test_state_bh(my_grid) :
     app[:] = em4phi * (Kpp_over_r2sintheta - 1.0/3.0 * gpp_over_r2sintheta * K)
        
     # overwrite inner cells using parity under r -> - r
-    my_grid.fill_inner_boundary(test_state)
-
-    dhrrdx     = np.dot(my_grid.derivatives.d1_matrix, hrr)
-    dhttdx     = np.dot(my_grid.derivatives.d1_matrix, htt)
-    dhppdx     = np.dot(my_grid.derivatives.d1_matrix, hpp)
+    grid.fill_inner_boundary(test_state)
     
     h_tensor = np.array([hrr, htt, hpp])
-    a_tensor = np.array([arr, att, app])
-    dhdr   = np.array([dhrrdx, dhttdx, dhppdx])
+    dh_dr = grid.get_first_derivative(h_tensor)
         
     # (unscaled) \bar\gamma_ij and \bar\gamma^ij
     bar_gamma_LL = get_metric(r, h_tensor)
     bar_gamma_UU = get_inverse_metric(r, h_tensor)
         
     # The connections Delta^i, Delta^i_jk and Delta_ijk
-    Delta_U, Delta_ULL, Delta_LLL  = get_connection(r, bar_gamma_UU, bar_gamma_LL, h_tensor, dhdr)
+    Delta_U, Delta_ULL, Delta_LLL  = get_connection(r, bar_gamma_UU, bar_gamma_LL, h_tensor, dh_dr)
     lambdar[:]   = Delta_U[i_r]
 
     # Fill boundary cells for lambdar
-    my_grid.fill_outer_boundary_ivar(test_state, idx_lambdar)
+    grid.fill_outer_boundary(test_state, [idx_lambdar])
 
     # overwrite inner cells using parity under r -> - r
-    my_grid.fill_inner_boundary_ivar(test_state, idx_lambdar)
+    grid.fill_inner_boundary(test_state, [idx_lambdar])
             
-    return test_state
+    return test_state.reshape(-1)

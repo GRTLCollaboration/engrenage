@@ -207,7 +207,7 @@ def get_rhs(t_i, current_state: np.ndarray, grid: Grid, eta, progress_bar, time_
     ####################################################################################################
             
     # finally add Kreiss Oliger dissipation which removes noise at frequency of grid resolution
-    sigma = 1.0 # kreiss-oliger damping coefficient, max_step should be limited to avoid instability
+    sigma = 0 # kreiss-oliger damping coefficient, max_step should be limited to avoid instability
     
     diss = sigma * grid.get_kreiss_oliger_diss(state)
     rhs += sigma * diss

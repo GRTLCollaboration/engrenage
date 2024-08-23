@@ -20,7 +20,7 @@ __all__ = [
     "idx_K", "idx_arr", "idx_att", "idx_app",
     "idx_lambdar", "idx_shiftr", "idx_br", "idx_lapse",
     "PARITY", "ASYMP_POWER", "ASYMP_OFFSET", "NUM_VARS",
-    "SpacingExtent",
+    "SpacingExtent", "VARIABLE_NAMES",
 ]
 
 
@@ -48,7 +48,7 @@ idx_lapse   = 13   # lapse - gauge variable for time slicing
 
 NUM_VARS = idx_lapse + 1
 
-variable_names = ["u", "v", "phi", "hrr", "htt", "hpp", 
+VARIABLE_NAMES = ["u", "v", "phi", "hrr", "htt", "hpp",
                   "K", "arr", "att", "app", 
                   "lambdar", "shiftr", "br", "lapse"]
 
