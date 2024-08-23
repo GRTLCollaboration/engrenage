@@ -8,10 +8,6 @@ from source.uservariables import *
 # For description of the grid setup see https://github.com/GRChombo/engrenage/wiki/Useful-code-background
 
 
-# TODO: Check that removing scaling attribute in grid is ok.
-# TODO: Check that boundary fill for worm hole solution is working fine
-
-
 ALL_INDICES = np.arange(NUM_VARS, dtype=np.uint8)
 
 
