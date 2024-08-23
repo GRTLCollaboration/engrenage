@@ -8,7 +8,7 @@ import pytest
 import sympy
 from sympy.abc import x
 
-from source.spacing import LinearSpacing, SinhSpacing, Spacing, TanhSpacing
+from source.spacing import *
 from source.uservariables import SpacingExtent
 
 
@@ -69,12 +69,21 @@ class TestSinhSpacing(BaseTestSpacing):
         assert dr.max() == pytest.approx(max_dr, rel=1e-1)
 
 
-class TestTanhSpacing(BaseTestSpacing):
+class TestCubicSpacing(BaseTestSpacing):
     """Test that derivatives in TanhSpacing are correct."""
     a = .5
 
     @classmethod
     def setup_class(cls):
-        cls.r: sympy.core.Expr = cls.a * (sympy.sinh(x) - sympy.tanh(x))
-        cls.sp = TanhSpacing(num_points, r_max, a=cls.a, extent=SpacingExtent.FULL)
+        cls.r: sympy.core.Expr = cls.a * (x + x**3 / 3)
+        cls.sp = CubicSpacing(num_points, r_max, a=cls.a, extent=SpacingExtent.FULL)
         cls.dnr_dxn = cls.sp._dnr_dxn()
+
+    def test_get_parameters(self):
+        min_dr = 1e-2
+        max_dr = 1e-1
+        params = CubicSpacing.get_parameters(r_max, min_dr=min_dr, max_dr=max_dr, extent=SpacingExtent.FULL)
+        sp = CubicSpacing(**params)
+        dr = sp[0, 1:] - sp[0, :-1]
+        assert dr.min() == pytest.approx(min_dr, rel=1e-1)
+        assert dr.max() == pytest.approx(max_dr, rel=1e-1)
