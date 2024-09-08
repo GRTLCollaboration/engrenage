@@ -1,11 +1,35 @@
-#uservariables.py
+"""
+This module defines all the constants used in the code.
 
-# hard code number of ghosts to 3 here
-num_ghosts = 3
+It provides the list of (rescaled) variables to be evolved and assigns each one an index and its parity.
+For description of the data structure see https://github.com/GRChombo/engrenage/wiki/Useful-code-background.
+"""
 
-# This file provides the list of (rescaled) variables to be evolved and
-# assigns each one an index and its parity
-# For description of the data structure see https://github.com/GRChombo/engrenage/wiki/Useful-code-background
+from enum import Enum
+
+import numpy as np
+
+
+__all__ = [
+    "NUM_GHOSTS", "SPACEDIM",
+    # Spatial indices
+    "i_r", "i_t", "i_p",
+    # Indices of state variables.
+    "idx_u", "idx_v",
+    "idx_phi", "idx_hrr", "idx_htt", "idx_hpp",
+    "idx_K", "idx_arr", "idx_att", "idx_app",
+    "idx_lambdar", "idx_shiftr", "idx_br", "idx_lapse",
+    "PARITY", "ASYMP_POWER", "ASYMP_OFFSET", "NUM_VARS",
+    "SpacingExtent", "VARIABLE_NAMES",
+]
+
+
+NUM_GHOSTS: int = 3
+
+# Spatial indices
+SPACEDIM: int = 3
+i_r, i_t, i_p = 0, 1, 2
+
 
 idx_u       = 0    # scalar field
 idx_v       = 1    # scalar field conjugate momentum (roughly the time derivative of u)
@@ -24,18 +48,37 @@ idx_lapse   = 13   # lapse - gauge variable for time slicing
 
 NUM_VARS = idx_lapse + 1
 
-variable_names = ["u", "v", "phi", "hrr", "htt", "hpp", 
+VARIABLE_NAMES = ["u", "v", "phi", "hrr", "htt", "hpp",
                   "K", "arr", "att", "app", 
                   "lambdar", "shiftr", "br", "lapse"]
 
-# parity under r -> -r
-parity = [1, 1,           # u, v
-          1, 1, 1, 1,     # phi, h
-          1, 1, 1, 1,     # K, a
-          -1, -1, -1, 1]  # lambda^r, shift^r, b^r, lapse
 
-# scaling at larger r as power of r, i.e. var ~ r^asymptotic_power
-asymptotic_power =   [0., 0.,                # u, v
-                      -1., -1., -1., -1.,    # phi, h
-                      -1., -2., -2., -2.,    # K, a
-                      -2., -1., -1., 0.]     # lambda^r, shift^r, b^r, lapse
+# parity under r -> -r
+PARITY = np.array(
+        [1, 1,                  # u, v
+        1, 1, 1, 1,             # phi, h
+        1, 1, 1, 1,             # K, a
+        -1, -1, -1, 1]          # lambda^r, shift^r, b^r, lapse
+)
+
+
+# scaling at larger r as power of r, i.e. var ~ r^asymptotic_power + asymptotic_offset
+ASYMP_POWER = np.array(
+        [0., 0.,                # u, v
+        -1., -1., -1., -1.,     # phi, h
+        -1., -2., -2., -2.,     # K, a
+        -2., -1., -1., 0.]      # lambda^r, shift^r, b^r, lapse
+)
+
+
+ASYMP_OFFSET = np.array(
+        [0., 0.,                # u, v
+         0, 0, 0, 0,            # phi, h
+         0, 0, 0, 0,            # K, a
+         0, 0, 0, 1]            # lambda^r, shift^r, b^r, lapse
+)
+
+
+class SpacingExtent(Enum):
+    HALF = 0
+    FULL = 1

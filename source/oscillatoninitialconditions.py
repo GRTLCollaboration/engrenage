@@ -1,23 +1,31 @@
-# oscillatoninitialconditions.py
+"""
+Set the initial conditions for all the variables for an oscillaton.
 
-# set the initial conditions for all the variables for an oscillaton
-# see further details in https://github.com/GRChombo/engrenage/wiki/Running-the-oscillaton-example
+See further details in https://github.com/GRChombo/engrenage/wiki/Running-the-oscillaton-example.
+"""
+
 
 from source.uservariables import *
 from source.tensoralgebra import *
-from source.Grid import *
+from source.grid import Grid
 import numpy as np
 from scipy.interpolate import interp1d
 
-def get_initial_state(a_grid) :
+
+def get_initial_state(grid: Grid) :
     
     # For readability
-    r = a_grid.r_vector
-    N = a_grid.num_points_r
-    dx = a_grid.base_dx
+    r = grid.r
+    N = grid.num_points
+    dr = grid.min_dr
     
-    initial_state = np.zeros(NUM_VARS * N)
-    [u,v,phi,hrr,htt,hpp,K,arr,att,app,lambdar,shiftr,br,lapse] = np.array_split(initial_state, NUM_VARS)
+    initial_state = np.zeros((NUM_VARS, N))
+    (
+        u, v,
+        phi, hrr, htt, hpp,
+        K, arr, att, app,
+        lambdar, shiftr, br, lapse
+    ) = initial_state
     
     # Get stationary oscillaton data for the vars, in both positive and negative R
     grr0_data    = np.loadtxt("../source/initial_data/grr0.csv")
@@ -30,7 +38,7 @@ def get_initial_state(a_grid) :
     
     # set up grid in radial direction in areal polar coordinates
     dR = 0.01
-    assert dR < dx, 'your dx is smaller than the oscillaton data, use fewer points!'
+    assert dR < dr, 'your dr is smaller than the oscillaton data, use fewer points!'
     R = np.linspace(-dR*(length-1), dR*(length-1), num=(length*2-1))
     
     # find interpolating functions for the data
@@ -57,29 +65,25 @@ def get_initial_state(a_grid) :
     hpp[:] = em4phi * gpp_over_r2sintheta - 1.0
     
     # overwrite inner cells using parity under r -> - r
-    a_grid.fill_inner_boundary(initial_state)
-    
-    dhrrdx     = np.dot(a_grid.derivatives.d1_matrix, hrr)
-    dhttdx     = np.dot(a_grid.derivatives.d1_matrix, htt)
-    dhppdx     = np.dot(a_grid.derivatives.d1_matrix, hpp)
+    grid.fill_inner_boundary(initial_state)
+
 
     # assign lambdar values
     h_tensor = np.array([hrr, htt, hpp])
-    a_tensor = np.array([arr, att, app])
-    dhdr   = np.array([dhrrdx, dhttdx, dhppdx])
+    dh_dr   = grid.get_first_derivative(h_tensor)
         
     # (unscaled) \bar\gamma_ij and \bar\gamma^ij
     bar_gamma_LL = get_metric(r, h_tensor)
     bar_gamma_UU = get_inverse_metric(r, h_tensor)
         
     # The connections Delta^i, Delta^i_jk and Delta_ijk
-    Delta_U, Delta_ULL, Delta_LLL  = get_connection(r, bar_gamma_UU, bar_gamma_LL, h_tensor, dhdr)
+    Delta_U, Delta_ULL, Delta_LLL  = get_connection(r, bar_gamma_UU, bar_gamma_LL, h_tensor, dh_dr)
     lambdar[:]   = Delta_U[i_r]
 
     # Fill boundary cells for lambdar
-    a_grid.fill_outer_boundary_ivar(initial_state, idx_lambdar)
+    grid.fill_outer_boundary(initial_state, [idx_lambdar])
 
     # overwrite inner cells using parity under r -> - r
-    a_grid.fill_inner_boundary_ivar(initial_state, idx_lambdar)
+    grid.fill_inner_boundary(initial_state, [idx_lambdar])
             
-    return initial_state
+    return initial_state.reshape(-1)
