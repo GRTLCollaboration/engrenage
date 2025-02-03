@@ -9,8 +9,6 @@ import numpy as np
 from scipy.integrate._ivp.base import OdeSolver
 from tqdm.auto import tqdm
 
-from source.uservariables import NUM_VARS
-
 
 # monkey patching the ode solvers with a progress bar
 # save the old methods - we still need them

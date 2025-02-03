@@ -8,20 +8,25 @@ New spacings should inherit from Spacing abstract base class.
 
 from abc import ABC, abstractmethod
 from math import ceil
+from enum import Enum
 
 import numpy as np
 from scipy.optimize import root_scalar
 
-from source.uservariables import NUM_GHOSTS, SpacingExtent
-
-
 __all__ = [
+    "NUM_GHOSTS",
+    "SpacingExtent",
     "Spacing",
     "LinearSpacing",
     "SinhSpacing",
     "CubicSpacing",
 ]
 
+NUM_GHOSTS: int = 3
+    
+class SpacingExtent(Enum):
+    HALF = 0
+    FULL = 1
 
 class Spacing(ABC):
     def __init__(self, num_points: int, r_max: float, extent: SpacingExtent, **kwargs):
