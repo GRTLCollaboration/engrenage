@@ -23,8 +23,6 @@ def get_horizonfinder(states_over_time, t, grid: Grid, background, matter) :
     theta = np.zeros([num_times, N])
     ah_rad = np.zeros([num_times])
     bh_mass = np.zeros([num_times])
-    
-    print(num_times)
 
     # unpack the vectors at each time
     for i in range(num_times) :
