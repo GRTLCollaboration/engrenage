@@ -93,9 +93,11 @@ class BSSNFirstDerivs:
     """
     def __init__(self, N):
         
-        self.first_derivative_indices = [idx_phi, idx_hrr, idx_htt, idx_hpp, idx_K, idx_lambdar, idx_shiftr, idx_lapse]
+        self.first_derivative_indices = [idx_phi, idx_hrr, idx_htt, idx_hpp, idx_K, idx_arr, idx_att, idx_app, 
+                                         idx_lambdar, idx_shiftr, idx_lapse]
 
         self.h_LL = np.zeros([N, SPACEDIM, SPACEDIM, SPACEDIM])
+        self.a_LL = np.zeros([N, SPACEDIM, SPACEDIM, SPACEDIM])
         self.shift_U = np.zeros([N, SPACEDIM, SPACEDIM])
         self.lambda_U = np.zeros([N, SPACEDIM, SPACEDIM])
         self.phi = np.zeros([N, SPACEDIM])
@@ -112,6 +114,9 @@ class BSSNFirstDerivs:
             dhtt_dr,
             dhpp_dr,
             dK_dr,
+            darr_dr,
+            datt_dr,
+            dapp_dr,
             dlambdar_dr,
             dshiftr_dr,
             dlapse_dr,
@@ -120,6 +125,10 @@ class BSSNFirstDerivs:
         self.h_LL[:,i_r,i_r,i_r] = dhrr_dr
         self.h_LL[:,i_t,i_t,i_r] = dhtt_dr
         self.h_LL[:,i_p,i_p,i_r] = dhpp_dr
+
+        self.a_LL[:,i_r,i_r,i_r] = darr_dr
+        self.a_LL[:,i_t,i_t,i_r] = datt_dr
+        self.a_LL[:,i_p,i_p,i_r] = dapp_dr        
         
         self.shift_U[:,i_r,i_r] = dshiftr_dr 
         self.lambda_U[:,i_r,i_r] = dlambdar_dr
