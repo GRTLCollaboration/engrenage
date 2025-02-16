@@ -1,4 +1,4 @@
-#hamdiagnostic.py
+#constraintsdiagnostic.py
 
 # python modules
 import numpy as np
