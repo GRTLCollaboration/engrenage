@@ -63,6 +63,7 @@ def get_constraints_diagnostic(states_over_time, t, grid: Grid, background, matt
         
         # \bar A^ij
         A_UU = get_bar_A_UU(r, bssn_vars, background)
+        A_LL = get_bar_A_LL(r, bssn_vars, background)
 
         # Asquared = \bar A_ij \bar A^ij
         Asquared = get_bar_A_squared(r, bssn_vars, background)        
@@ -82,10 +83,12 @@ def get_constraints_diagnostic(states_over_time, t, grid: Grid, background, matt
                          - 2.0 * eight_pi_G * my_emtensor.rho)
 
 
-        # Get the Mom constraint eqn (47) of NRPy+ https://arxiv.org/abs/1712.07658 but with bar_D
-        Mom[i,:,:] = em4phi[:,np.newaxis] * (np.einsum('xik,xjl,xklj->xi', bar_gamma_UU, bar_gamma_UU, d1.a_LL)
-                            + np.einsum('xijk,xkj->xi', bar_chris, A_UU) 
-                            + np.einsum('xjjk,xik->xi', bar_chris, A_UU)
+        # Get the Mom constraint eqn (47) of NRPy+ https://arxiv.org/abs/1712.07658
+        Mom[i,:,:] = em4phi[:,np.newaxis] * (
+                            np.einsum('xil,xjm,xlm,xjlm->xi', bar_gamma_UU, bar_gamma_UU, background.scaling_matrix, d1.a_LL)
+                            + np.einsum('xil,xjm,xlm,xjlm->xi', bar_gamma_UU, bar_gamma_UU, bssn_vars.a_LL, background.d1_scaling_matrix)
+                            - np.einsum('xil,xjm,xnjl,xnm->xi', bar_gamma_UU, bar_gamma_UU, bar_chris, A_LL)
+                            - np.einsum('xil,xjm,xnjm,xln->xi', bar_gamma_UU, bar_gamma_UU, bar_chris, A_LL)
                             + 6.0 * np.einsum('xij,xj->xi', A_UU, d1.phi) 
                             - two_thirds * np.einsum('xij,xj->xi', bar_gamma_UU, d1.K)
                             - eight_pi_G * np.einsum('xij,xj->xi', bar_gamma_UU, my_emtensor.Si))
