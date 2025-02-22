@@ -61,7 +61,7 @@ def get_constraints_diagnostic(states_over_time, t, grid: Grid, background, matt
         # \bar \Gamma^i_jk
         bar_chris = get_bar_christoffel(r, Delta_ULL, background)
         
-        # \bar A^ij
+        # \bar A^ij and \bar A_ij
         A_UU = get_bar_A_UU(r, bssn_vars, background)
         A_LL = get_bar_A_LL(r, bssn_vars, background)
 
