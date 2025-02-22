@@ -1,4 +1,4 @@
-#hamdiagnostic.py
+#constraintsdiagnostic.py
 
 # python modules
 import numpy as np
@@ -10,14 +10,15 @@ from bssn.tensoralgebra import *
 # The diagnostic function returns the Hamiltonian constraint over the grid
 # it takes in the solution of the evolution, which is the state vector at every
 # time step, and returns the spatial profile Ham(r) at each time step
-def get_Ham_diagnostic(states_over_time, t, grid: Grid, background, matter) :
+def get_constraints_diagnostic(states_over_time, t, grid: Grid, background, matter) :
     
     # For readability
     r = grid.r
     N = grid.num_points
     num_times = int(np.size(states_over_time) / (grid.NUM_VARS * N))
     Ham = np.zeros([num_times, N])
-    
+    Mom = np.zeros([num_times, N, SPACEDIM])
+
     # unpack the vectors at each time
     for i in range(num_times) :
         
@@ -56,7 +57,14 @@ def get_Ham_diagnostic(states_over_time, t, grid: Grid, background, matter) :
                          Delta_U, Delta_ULL, Delta_LLL, 
                          bar_gamma_UU, bar_gamma_LL, background)
         bar_R   = get_trace(bar_Rij, bar_gamma_UU)
+
+        # \bar \Gamma^i_jk
+        bar_chris = get_bar_christoffel(r, Delta_ULL, background)
         
+        # \bar A^ij
+        A_UU = get_bar_A_UU(r, bssn_vars, background)
+        A_LL = get_bar_A_LL(r, bssn_vars, background)
+
         # Asquared = \bar A_ij \bar A^ij
         Asquared = get_bar_A_squared(r, bssn_vars, background)        
         
@@ -74,11 +82,25 @@ def get_Ham_diagnostic(states_over_time, t, grid: Grid, background, matter) :
                                    + 8.0 * np.einsum('xij,xkij,xk->x', bar_gamma_UU, bar_chris, d1.phi))
                          - 2.0 * eight_pi_G * my_emtensor.rho)
 
+
+        # Get the Mom constraint eqn (47) of NRPy+ https://arxiv.org/abs/1712.07658
+        Mom[i,:,:] = em4phi[:,np.newaxis] * (
+                            np.einsum('xil,xjm,xlm,xjlm->xi', bar_gamma_UU, bar_gamma_UU, background.scaling_matrix, d1.a_LL)
+                            + np.einsum('xil,xjm,xlm,xjlm->xi', bar_gamma_UU, bar_gamma_UU, bssn_vars.a_LL, background.d1_scaling_matrix)
+                            - np.einsum('xil,xjm,xnjl,xnm->xi', bar_gamma_UU, bar_gamma_UU, bar_chris, A_LL)
+                            - np.einsum('xil,xjm,xnjm,xln->xi', bar_gamma_UU, bar_gamma_UU, bar_chris, A_LL)
+                            + 6.0 * np.einsum('xij,xj->xi', A_UU, d1.phi) 
+                            - two_thirds * np.einsum('xij,xj->xi', bar_gamma_UU, d1.K)
+                            - eight_pi_G * np.einsum('xij,xj->xi', bar_gamma_UU, my_emtensor.Si))
+
         # Fix endpoints
         grid.fill_inner_boundary_single_variable(Ham[i,:])
-    
+        grid.fill_inner_boundary_single_variable(Mom[i,:,i_r])
+        grid.fill_inner_boundary_single_variable(Mom[i,:,i_t])
+        grid.fill_inner_boundary_single_variable(Mom[i,:,i_p])
+
     
     # end of iteration over time  
     #########################################################################
     
-    return Ham
+    return Ham, Mom

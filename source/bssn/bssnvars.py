@@ -103,6 +103,7 @@ class BSSNFirstDerivs:
         self.phi = np.zeros([N, SPACEDIM])
         self.K = np.zeros([N, SPACEDIM])
         self.lapse = np.zeros([N, SPACEDIM])
+
         
     def set_bssn_first_derivs(self, dstate_dr):
         """
@@ -129,6 +130,7 @@ class BSSNFirstDerivs:
         self.a_LL[:,i_r,i_r,i_r] = darr_dr
         self.a_LL[:,i_t,i_t,i_r] = datt_dr
         self.a_LL[:,i_p,i_p,i_r] = dapp_dr        
+
         
         self.shift_U[:,i_r,i_r] = dshiftr_dr 
         self.lambda_U[:,i_r,i_r] = dlambdar_dr
