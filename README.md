@@ -21,16 +21,16 @@ For more information and learning resources see the [wiki](https://github.com/GR
 
 # Installation : choose your level
 
-**Level Zero**: You can use [Google Colab](https://colab.research.google.com) to run the Jupyter notebooks and edit your own copy of the code in an internet browser. The avoids the need to download a python installation to your computer. You can either download the zip of the files (as in Level 1) and then drag them into your Colab folder, or get them directly from the GitHub page by providing the url. 
+For all levels you need to have a python installation like [Anaconda](https://www.anaconda.com/download) that contains Jupyter notebooks. Please refer to [[Useful resources | Useful Resources]] for some tips on using anaconda to manage packages.
 
-**Level 1**: If you just want to play around with the code and don't expect to save any edits back to the repository, then just press the green "Code" button on the main repository page and download the zip of all the files - this is the simpler option if you are not too familiar with git, but do have a python installation like Anaconda that contains Jupyter.
+**Level 1**: If you just want to play around with the code and don't expect to save any edits back to the repository, then just press the green "Code" button on the main repository page and download the zip of all the files - this is the simpler option if you are not too familiar with git. You should then unzip them, and navigate to the base directory in the terminal before you run `jupyter notebook` to see and edit the files.
 
 **Level 2**: Use GitHub to fork and clone the repository. Please refer to [[Useful resources | Useful Resources]] for some tips if you are not familiar with the command line or GitHub.
 
 1. [Fork and clone](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
    this repository (or just download the zipped files). 
 
-2. Having obtained a python distribution on your computer (if you are just starting out you may want to use [Anaconda](https://www.anaconda.com/download)), create a [Python environment](https://docs.python.org/3/tutorial/venv.html) (e.g. in `./env`) using the terminal command:
+2. Having obtained a python distribution on your computer, create a [Python environment](https://docs.python.org/3/tutorial/venv.html) (e.g. in `./env`) using the terminal command:
 
     ```sh
     python3 -m venv ./env
