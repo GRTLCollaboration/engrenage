@@ -21,11 +21,11 @@ For more information and learning resources see the [wiki](https://github.com/GR
 
 # Installation : choose your level
 
-For all levels you need to have a python installation like [Anaconda](https://www.anaconda.com/download) that contains Jupyter notebooks. Please refer to [[Useful resources | Useful Resources]] for some tips on using anaconda to manage packages.
+For all levels you need to have a python installation like [Anaconda](https://www.anaconda.com/download) that contains Jupyter notebooks. Please refer to [Useful resources](https://github.com/GRTLCollaboration/engrenage/wiki/Useful-Resources) for some tips on using anaconda to manage packages and getting the dependencies needed for engrenage to work.
 
 **Level 1**: If you just want to play around with the code and don't expect to save any edits back to the repository, then just press the green "Code" button on the main repository page and download the zip of all the files - this is the simpler option if you are not too familiar with git. You should then unzip them, and navigate to the base directory in the terminal before you run `jupyter notebook` to see and edit the files.
 
-**Level 2**: Use GitHub to fork and clone the repository. Please refer to [[Useful resources | Useful Resources]] for some tips if you are not familiar with the command line or GitHub.
+**Level 2**: Use GitHub to fork and clone the repository. Please refer to [Useful resources](https://github.com/GRTLCollaboration/engrenage/wiki/Useful-Resources) for some tips if you are not familiar with the command line or GitHub.
 
 1. [Fork and clone](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
    this repository (or just download the zipped files). 
