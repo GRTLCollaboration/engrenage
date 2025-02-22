@@ -138,7 +138,9 @@ def get_rhs(t_i, current_state: np.ndarray, grid: Grid, background, matter, prog
     # kreiss-oliger damping coefficient, max_step should be limited to avoid instability
     # max sigma ~ dx / dt so dt max = dx / sigma. 
     # Since dt < 0.5 dx_min for stability anyway we can usually quite safely pick sigma = 1.0
-    sigma = 1.0
+    # but it seems to work best when weighted by the lapse and conformal factor too
+    sigma = 1.0 * bssn_vars.lapse * np.exp(-2.0*bssn_vars.phi)
+    
     diss = sigma * grid.get_kreiss_oliger_diss(unflattened_state)
     rhs_state += sigma * diss 
     
