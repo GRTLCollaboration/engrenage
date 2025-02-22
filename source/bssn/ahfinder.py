@@ -14,7 +14,7 @@ from bssn.tensoralgebra import *
 # time step, and returns the spatial profile omega(r) at each time step
 # It finds the zero-crossings of such function, which define the apparent
 # horizon, and are used to return the mass
-def get_horizonfinder(states_over_time, t, grid: Grid, background, matter) :
+def get_horizon_diagnostics(states_over_time, t, grid: Grid, background, matter) :
     
     # For readability
     r = grid.r
