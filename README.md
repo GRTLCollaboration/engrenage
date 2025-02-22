@@ -19,13 +19,13 @@ For more information and learning resources see the [wiki](https://github.com/GR
 <img align="right" src="papers/cogs.jpeg" width="200">
 (Engrenage is the French word for a system of gears. Understanding any code is very much like understanding how the parts of a mechanical system fit together. It is also very common when coding to be "pris dans l'engrenage".)
 
-# Installation
+# Installation : choose your level
 
-Note that if you already have an installation of python3 including Jupyter, and don't want to add to the code, you could just download the zip file of the repository and save it somewhere manually.
+**Level Zero**: You can use [Google Colab](https://colab.research.google.com) to run the Jupyter notebooks and edit your own copy of the code in an internet browser. The avoids the need to download a python installation to your computer. You can either download the zip of the files (as in Level 1) and then drag them into your Colab folder, or get them directly from the GitHub page by providing the url. 
 
-If you are a complete newbie, Google Colab is also a good option to avoid having to install anything on your computer locally.
+**Level 1**: If you just want to play around with the code and don't expect to save any edits back to the repository, then just press the green "Code" button on the main repository page and download the zip of all the files - this is the simpler option if you are not too familiar with git, but do have a python installation like Anaconda that contains Jupyter.
 
-The "correct" way to do it is as follows:
+**Level 2**: Use GitHub to fork and clone the repository. Please refer to [[Useful resources | Useful Resources]] for some tips if you are not familiar with the command line or GitHub.
 
 1. [Fork and clone](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
    this repository (or just download the zipped files). 
