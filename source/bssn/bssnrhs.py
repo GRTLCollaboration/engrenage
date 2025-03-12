@@ -21,9 +21,21 @@ def get_bssn_rhs(bssn_rhs, r, bssn_vars, d1, d2, background, emtensor) :
     # \bar \Gamma^i_jk
     bar_chris = get_bar_christoffel(r, Delta_ULL, background)
 
+
+
+   # rescaled shift in terms of scaling factors and bssn_vars.shift_U
+    r_shift_U = background.inverse_scaling_vector * bssn_vars.shift_U
+    r_d1_shift_U = (background.d1_inverse_scaling_vector * bssn_vars.shift_U[:,:,np.newaxis] 
+                     + d1.shift_U * background.inverse_scaling_vector[:,:,np.newaxis])
+    r_d2_shift_U = (np.einsum('xijk,xi->xijk', background.d2_inverse_scaling_vector, bssn_vars.shift_U)
+         + np.einsum('xik,xij->xijk', background.d1_inverse_scaling_vector, d1.shift_U)
+         + np.einsum('xij,xik->xijk', background.d1_inverse_scaling_vector, d1.shift_U)
+         + np.einsum('xi,xijk->xijk', background.inverse_scaling_vector, d2.shift_U)
+    )
+
     # This is the conformal divergence of the shift \bar D_i \beta^i
-    bar_div_shift =  np.einsum('xii->x', d1.shift_U)
-    bar_div_shift += np.einsum('xiij,xj->x', bar_chris, bssn_vars.shift_U)     
+    bar_div_shift =  np.einsum('xii->x', r_d1_shift_U)
+    bar_div_shift += np.einsum('xiij,xj->x', bar_chris, r_shift_U)     
 
     # Trace of \bar Aij and A_ij A^ij
     trace_bar_A   = get_trace_bar_A(r, bssn_vars, background)       
@@ -47,8 +59,10 @@ def get_bssn_rhs(bssn_rhs, r, bssn_vars, d1, d2, background, emtensor) :
     
     # This is \hat\gamma_jk \hat D_i shift^k 
     # (note Etienne paper notation ambiguity - this is NOT \hat D_i \beta_j)
-    hat_D_shift_U = (np.einsum('xjk,xki->xij', background.hat_gamma_LL, d1.shift_U)
-                   + np.einsum('xjk,xkil,xl->xij', background.hat_gamma_LL, background.hat_christoffel, bssn_vars.shift_U))
+    hat_D_shift_U = (
+         np.einsum('xjk,xki->xij', background.hat_gamma_LL, r_d1_shift_U)
+         + np.einsum('xjk,xkil,xl->xij', background.hat_gamma_LL, background.hat_christoffel, r_shift_U)
+   )
     
     # Rescale quantities because we want change in h not epsilon
     r_hat_D_shift_U = background.inverse_scaling_matrix * hat_D_shift_U
@@ -126,27 +140,26 @@ def get_bssn_rhs(bssn_rhs, r, bssn_vars, d1, d2, background, emtensor) :
     # Where \Delta^k = \bar\gamma^ij (\bar\Gamma^k_ij - \hat\Gamma^k_ij)  
 
     # \bar \gamma^jk \hat D_j \hat D_k shift^i
-    hat_D2_shift = (  np.einsum('xjk,xijk->xi', bar_gamma_UU, d2.shift_U)
-                    + np.einsum('xjk,xikl,xlj->xi', bar_gamma_UU, background.hat_christoffel, d1.shift_U)
-                    + np.einsum('xjk,xijl,xlk->xi', bar_gamma_UU, background.hat_christoffel, d1.shift_U)
-                    - np.einsum('xjk,xljk,xil->xi', bar_gamma_UU, background.hat_christoffel, d1.shift_U)
-                    + np.einsum('xjk,xiklj,xl->xi', bar_gamma_UU, background.d1_hat_christoffel, bssn_vars.shift_U)
-                    + np.einsum('xjk,xijl,xlkm,xm->xi', bar_gamma_UU, background.hat_christoffel, 
-                                                        background.hat_christoffel, bssn_vars.shift_U)
-                    - np.einsum('xjk,xljk,xilm,xm->xi', bar_gamma_UU, background.hat_christoffel, 
-                                                        background.hat_christoffel, bssn_vars.shift_U))
-
+    hat_D2_shift = (  np.einsum('xjk,xijk->xi', bar_gamma_UU, r_d2_shift_U)
+                + np.einsum('xjk,xikl,xlj->xi', bar_gamma_UU, background.hat_christoffel, r_d1_shift_U)
+                + np.einsum('xjk,xijl,xlk->xi', bar_gamma_UU, background.hat_christoffel, r_d1_shift_U)
+                - np.einsum('xjk,xljk,xil->xi', bar_gamma_UU, background.hat_christoffel, r_d1_shift_U)
+                + np.einsum('xjk,xiklj,xl->xi', bar_gamma_UU, background.d1_hat_christoffel, r_shift_U)
+                + np.einsum('xjk,xijl,xlkm,xm->xi', bar_gamma_UU, background.hat_christoffel, 
+                                                    background.hat_christoffel, r_shift_U)
+                - np.einsum('xjk,xljk,xilm,xm->xi', bar_gamma_UU, background.hat_christoffel, 
+                                                    background.hat_christoffel, r_shift_U))
     # This is \bar D^i (\bar D_j \beta^j) note the raised index of j
     # We can use that D_i V^i = 1/sqrt(detgamma) d_i [sqrt(detgamma) V^i]
     # And that we impose det(bargamma) = det(hatgamma) which we know the derivs for analytically
-    bar_D_div_shift = (np.einsum('xij,xkjk->xi', bar_gamma_UU, d2.shift_U)
+    bar_D_div_shift = (np.einsum('xij,xkjk->xi', bar_gamma_UU, r_d2_shift_U)
                      + (0.5 / background.det_hat_gamma[:,np.newaxis] * 
-                        np.einsum('xij,xkj,xk->xi', bar_gamma_UU, d1.shift_U, background.d1_det_hat_gamma))
+                        np.einsum('xij,xkj,xk->xi', bar_gamma_UU, r_d1_shift_U, background.d1_det_hat_gamma))
                      + (0.5 / background.det_hat_gamma[:,np.newaxis] * 
-                        np.einsum('xij,xjk,xk->xi', bar_gamma_UU, background.d2_det_hat_gamma, bssn_vars.shift_U))
+                        np.einsum('xij,xjk,xk->xi', bar_gamma_UU, background.d2_det_hat_gamma, r_shift_U))
                      - (0.5 / background.det_hat_gamma[:,np.newaxis] / background.det_hat_gamma[:,np.newaxis] 
                         * np.einsum('xij,xj,xk,xk->xi', bar_gamma_UU, background.d1_det_hat_gamma, 
-                                                        background.d1_det_hat_gamma, bssn_vars.shift_U)))
+                                                        background.d1_det_hat_gamma, r_shift_U)))
 
     # Calculate rhs
     dlambdadt = (hat_D2_shift 
