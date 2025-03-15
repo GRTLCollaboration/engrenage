@@ -67,8 +67,8 @@ def get_rhs(t_i, current_state: np.ndarray, grid: Grid, background, matter, prog
 
     # Now enforce it
     bar_gamma_LL = get_bar_gamma_LL(r, bssn_vars.h_LL, background)
-    bssn_vars.h_LL = (rescaling_factor[:,np.newaxis,np.newaxis] * 
-                        (bar_gamma_LL - background.hat_gamma_LL) * background.inverse_scaling_matrix)
+    new_bar_gamma_LL = rescaling_factor[:,np.newaxis,np.newaxis] * bar_gamma_LL
+    bssn_vars.h_LL = (new_bar_gamma_LL - background.hat_gamma_LL) * background.inverse_scaling_matrix
         
     # Also limit the conformal factor so it doesn't blow up near BHs
     bssn_vars.phi = np.minimum(bssn_vars.phi, np.ones(N)*1.0e6)
