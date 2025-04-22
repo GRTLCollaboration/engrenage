@@ -135,8 +135,8 @@ def get_tensor_advection(r, A_LL, advec_A_LL, shift_U, d1_shift_U, background) :
     advec_A_LL = ( np.einsum('xijk,xk->xij', advec_A_LL, background.inverse_scaling_vector * shift_U)
                  + np.einsum('xijk,xk->xij', background.inverse_scaling_matrix[:,:,:,np.newaxis] * A_LL[:,:,:,np.newaxis] 
                                              * background.d1_scaling_matrix, background.inverse_scaling_vector * shift_U)
-                 + np.einsum('xik,xkj->xij', A_LL, background.scaling_vector[:,np.newaxis,:] * d1_shift_U) 
-                 + np.einsum('xjk,xki->xij', A_LL, background.scaling_vector[:,np.newaxis,:] * d1_shift_U)                   
+                 + np.einsum('xik,xkj->xij', A_LL, background.inverse_scaling_vector[:,np.newaxis,:] * d1_shift_U) 
+                 + np.einsum('xjk,xki->xij', A_LL, background.inverse_scaling_vector[:,np.newaxis,:] * d1_shift_U)                   
                  + np.einsum('xik,xjk->xij', A_LL * background.scaling_vector[:,np.newaxis,:], 
                                              background.inverse_scaling_vector[:,:,np.newaxis] * shift_U[:,np.newaxis,:] 
                                              * background.d1_inverse_scaling_vector) 

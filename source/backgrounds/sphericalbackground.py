@@ -24,6 +24,7 @@ class FlatSphericalBackground:
         self.d1_scaling_vector = self.get_d1_scaling_vector()
         self.d1_inverse_scaling_vector = self.get_d1_inverse_scaling_vector()        
         self.d2_scaling_vector = self.get_d2_scaling_vector()
+        self.d2_inverse_scaling_vector = self.get_d2_inverse_scaling_vector()        
         self.scaling_matrix = self.get_scaling_matrix()
         self.inverse_scaling_matrix = self.get_inverse_scaling_matrix()
         self.d1_scaling_matrix = self.get_d1_scaling_matrix()
@@ -80,6 +81,17 @@ class FlatSphericalBackground:
         
         return ds_dx
     
+    def get_d2_inverse_scaling_vector(self) :
+    
+        d2s_dxdy = np.zeros([self.N, SPACEDIM, SPACEDIM, SPACEDIM])
+        d2s_dxdy[:,i_t, i_r, i_r] += 2.0 / (self.r ** 3.0) 
+        d2s_dxdy[:,i_p, i_r, i_r] += 2.0 / (self.r ** 3.0) / sintheta
+        d2s_dxdy[:,i_p, i_r, i_t] += 1.0 / (self.r ** 2.0 * sintheta ** 2.0) * costheta
+        d2s_dxdy[:,i_p, i_t, i_r] += 1.0 / (self.r ** 2.0 * sintheta ** 2.0) * costheta
+        d2s_dxdy[:,i_p, i_t, i_t] += 1.0 / (self.r * sintheta ** 3.0) * (costheta ** 2.0 + 1.0)
+        
+        return d2s_dxdy
+
     # This is d2 (scaling_i) / dx^j dx^k
     def get_d2_scaling_vector(self) :
         
