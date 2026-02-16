@@ -82,7 +82,7 @@ def get_rhs(t_i, current_state: np.ndarray, grid: Grid, background, matter, prog
     
     # Matter sources, must be defined in matter class
     my_emtensor  = matter.get_emtensor(r, bssn_vars, background)
-    matter_rhs = matter.get_matter_rhs(r, bssn_vars, d1, background)    
+    matter_rhs = matter.get_matter_rhs(r, bssn_vars, d1, background, grid)    
 
     if (timing_on) :     
         check_time_3 = time.time()
