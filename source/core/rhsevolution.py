@@ -142,7 +142,7 @@ def get_rhs(t_i, current_state: np.ndarray, grid: Grid, background, matter, prog
     sigma = 1.0 * bssn_vars.lapse * np.exp(-2.0*bssn_vars.phi)
     
     diss = sigma * grid.get_kreiss_oliger_diss(unflattened_state)
-    rhs_state += sigma * diss 
+    rhs_state += diss 
     
     if (timing_on) :    
         check_time_5 = time.time()
